@@ -1,0 +1,344 @@
+/**
+ * ฐานข้อมูล SOP และระบบซิงค์คลาวด์อัตโนมัติ (Centralized Cloud Database Sync)
+ * ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod)
+ * เชื่อมต่อคลาวด์ JSONBin เรียลไทม์ 100% (Bin ID: 6a8b1844f5f4af5e2938cd01)
+ */
+
+const CLOUD_CONFIG = {
+  enabled: true,
+  type: "jsonbin",
+  jsonbin: {
+    binId: "6a8b1844f5f4af5e2938cd01",
+    apiKey: "$2a$10$8lCsw6RsO5NfEn9BF0t0pe8GubFnrevKbsAkps3BIAwyRcmAp0HGK"
+  }
+};
+
+const DEFAULT_SUB_CATEGORIES = [
+  { id: "thigh", stage: "prep", label: "สะโพกไก่ดิบ" },
+  { id: "wing", stage: "prep", label: "ปีกไก่ดิบ" },
+  { id: "batter-sauce", stage: "prep", label: "แป้งทอด & ซอสเบส" },
+  { id: "sides-prep", stage: "prep", label: "ข้าวสาร กิมจิ & เครื่องซุป" },
+
+  { id: "thigh-frying", stage: "cooking", label: "ทอดสะโพกไก่" },
+  { id: "wing-frying", stage: "cooking", label: "ทอดปีกไก่" },
+  { id: "sauces-coating", stage: "cooking", label: "คลุกซอส 4 สูตร" },
+  { id: "sides-cooking", stage: "cooking", label: "ทอดเฟรนช์ฟรายส์ & ต้มซุป" },
+
+  { id: "dine-in", stage: "serving-packaging", label: "จัดเสิร์ฟทานที่ร้าน" },
+  { id: "takeaway-delivery", stage: "serving-packaging", label: "แพ็กเดลิเวอรี / กลับบ้าน" },
+
+  { id: "food-safety", stage: "hygiene", label: "ความปลอดภัยอาหาร & FIFO" }
+];
+
+function getSubCategoriesData() {
+  const local = localStorage.getItem("PKT_SUB_CATEGORIES_V1");
+  if (local) {
+    try { return JSON.parse(local); } catch (e) { console.error(e); }
+  }
+  saveSubCategoriesData(DEFAULT_SUB_CATEGORIES);
+  return DEFAULT_SUB_CATEGORIES;
+}
+
+function saveSubCategoriesData(data) {
+  localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(data));
+  if (CLOUD_CONFIG.enabled) {
+    syncSubCategoriesToCloud(data);
+  }
+}
+
+function addSubCategoryItem(stage, label) {
+  const list = getSubCategoriesData();
+  const id = "sub-" + Date.now();
+  const newItem = { id, stage, label: label.trim() };
+  list.push(newItem);
+  saveSubCategoriesData(list);
+  return newItem;
+}
+
+function removeSubCategoryItem(id) {
+  let list = getSubCategoriesData();
+  list = list.filter(item => item.id !== id);
+  saveSubCategoriesData(list);
+}
+
+function createBase64SvgPlaceholder(bgColor, textColor, mainText, subText) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect width="800" height="450" fill="${bgColor}"/><g text-anchor="middle" font-family="Prompt, sans-serif"><text x="400" y="200" fill="${textColor}" font-size="34" font-weight="800">${mainText}</text><text x="400" y="270" fill="%2394a3b8" font-size="22">${subText}</text></g></svg>`;
+  try {
+    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+  } catch (e) {
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+}
+
+const SAMPLE_IMAGES = {
+  thighPrep: createBase64SvgPlaceholder("#1e293b", "#fbbf24", "🥩 การเตรียมสะโพกไก่ดิบ 130-150g", "ล้าง ตัดแต่งมัน บากเนื้อ 2 รอย"),
+  wingPrep: createBase64SvgPlaceholder("#1e293b", "#f59e0b", "🍗 การเตรียมปีกไก่ดิบ (ปีกบน/ปีกกลาง)", "บากปีกกลาง ซับแห้ง หมัก 4 ชม."),
+  batterPrep: createBase64SvgPlaceholder("#1e293b", "#10b981", "🥣 การผสมผงหมักและแป้งชุบทอด", "อัตราส่วนแป้งแห้งและแป้งเปียกน้ำเย็นจัด"),
+  frying: createBase64SvgPlaceholder("#1e293b", "#ef4444", "🔥 การทอดไก่อุณหภูมิ 165°C - 170°C", "สะโพก 8.5 นาที / ปีก 6.5 นาที"),
+  sauceCoating: createBase64SvgPlaceholder("#1e293b", "#fbbf24", "🥣 การคลุกซอส 4 สูตร Signature", "เกาหลีเผ็ด / โชยุ / ฮันนี่มัสตาร์ด / หม่าล่า"),
+  platingDineIn: createBase64SvgPlaceholder("#1e293b", "#3b82f6", "🍽️ การจัดเสิร์ฟทานที่ร้าน (Dine-in)", "การจัดจานไก่ทอด ข้าว ซุป เครื่องเคียง"),
+  packagingTakeaway: createBase64SvgPlaceholder("#1e293b", "#ec4899", "📦 การแพ็กเดลิเวอรี / สั่งกลับบ้าน (Takeaway)", "กล่องระบายความร้อน ถุงกระดาษแยกซอส")
+};
+
+const INITIAL_SOP_DATA = [
+  {
+    id: "sop-prep-thigh",
+    title: "SOP การเตรียมและหมัก สะโพกไก่ดิบ (Raw Thigh Prep)",
+    category: "prep",
+    subCategory: "thigh",
+    version: "1.0",
+    updatedAt: "2026-08-21 22:00",
+    author: "คุณเจ้าของร้าน / Owner",
+    changeNotes: "กำหนดสูตรมาตรฐานเริ่มต้นของร้านผมขอทอด",
+    versionHistory: [],
+    targetRole: ["kitchen", "admin"],
+    prepTime: "20 นาที (พักหมัก 6 ชม.)",
+    cookTime: "-",
+    yield: "1.5 kg (ประมาณ 10 ชิ้น)",
+    summary: "มาตรฐานการตรวจรับ ล้าง ตัดแต่งมัน บากเนื้อ และนวดหมักสะโพกไก่ดิบก่อนนำไปทอด",
+    tags: ["สะโพกไก่ดิบ", "วัตถุดิบดิบ", "การหมัก", "การเตรียมวัตถุดิบ"],
+    specifications: [
+      { label: "วัตถุดิบหลัก", value: "สะโพกไก่สดตัดแต่ง 1.5 kg" },
+      { label: "น้ำหนักต่อชิ้น", value: "130 - 150 กรัม" },
+      { label: "สัดส่วนผงหมัก", value: "45g ผงหมัก + 150ml น้ำเย็นจัด" },
+      { label: "อุณหภูมิแช่หมัก", value: "2°C - 4°C (หมัก 6 - 24 ชม.)" }
+    ],
+    ingredients: [
+      { name: "สะโพกไก่สด", amount: 1.5, unit: "kg" },
+      { name: "ผงหมักสูตรเข้มข้น ร้านผมขอทอด", amount: 45, unit: "g" },
+      { name: "น้ำเย็นจัด", amount: 150, unit: "ml" }
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: "การตรวจรับและล้างสะโพกไก่",
+        description: "ตรวจเช็คความสดของสะโพกไก่ สีชมพูธรรมชาติ ไม่มีกลิ่นคาว ล้างด้วยน้ำเย็นจัดเพื่อลดความร้อน ตัดแต่งมันส่วนเกินออก",
+        imageUrl: SAMPLE_IMAGES.thighPrep,
+        timerSeconds: 0,
+        tip: "ห้ามใช้ไก่ที่อุณหภูมิเกิน 5°C ในการนำมาหมัก"
+      },
+      {
+        stepNumber: 2,
+        title: "การบากเนื้อไก่ด้านใน",
+        description: "ใช้มีดคมบากเนื้อสะโพกด้านในเป็น 2 รอยขนาน ความลึกประมาณ 0.5 ซม. เพื่อให้ซึมซับผงหมักเข้าถึงแกนเนื้อและช่วยให้ทอดสุกเร็วทั่วถึง",
+        imageUrl: SAMPLE_IMAGES.thighPrep,
+        timerSeconds: 0,
+        tip: "ระวังอย่าบากลึกจนหนังหลุดออกจากเนื้อ"
+      },
+      {
+        stepNumber: 3,
+        title: "การละลายผงหมักและนวดไก่",
+        description: "ผสมผงหมัก 45g กับน้ำเย็นจัด 150ml คนให้ละลาย เทใส่สะโพกไก่ นวดคลุกเคล้าด้วยมือ 3 นาทีจนน้ำหมักซึมเข้าเนื้อไก่ทั้งหมด",
+        imageUrl: SAMPLE_IMAGES.thighPrep,
+        timerSeconds: 180,
+        tip: "นวดวนเป็นวงกลมเพื่อให้เครื่องหมักซึมเข้าทุกซอกมุม"
+      },
+      {
+        stepNumber: 4,
+        title: "บรรจุและซีลแช่เย็น (Marinating Storage)",
+        description: "บรรจุไก่ใส่กล่อง Food Grade ปิดฝามิดชิด ติดป้าย Date-Time Tag แช่เย็นอุณหภูมิ 2°C - 4°C หมักอย่างน้อย 6 ชั่วโมงก่อนนำไปทอด",
+        imageUrl: "",
+        timerSeconds: 0,
+        tip: "ยึดหลัก FIFO (เข้าก่อน-ออกก่อน) และวางกล่องไก่ดิบไว้ชั้นล่างสุด"
+      }
+    ]
+  },
+
+  {
+    id: "sop-prep-wing",
+    title: "SOP การเตรียมและหมัก ปีกไก่ดิบ (Raw Wing Prep)",
+    category: "prep",
+    subCategory: "wing",
+    version: "1.0",
+    updatedAt: "2026-08-21 22:00",
+    author: "คุณเจ้าของร้าน / Owner",
+    changeNotes: "กำหนดสูตรหมักปีกไก่กระเทียมมาตรฐาน",
+    versionHistory: [],
+    targetRole: ["kitchen", "admin"],
+    prepTime: "15 นาที (พักหมัก 4 ชม.)",
+    cookTime: "-",
+    yield: "1.0 kg (ประมาณ 20 ชิ้น)",
+    summary: "การซับแห้ง บากปีกกลาง ผสมผงหมักกระเทียม และแช่หมักปีกไก่สำหรับทอดกรอบ",
+    tags: ["ปีกไก่ดิบ", "วัตถุดิบดิบ", "การหมัก", "การเตรียมวัตถุดิบ"],
+    specifications: [
+      { label: "ส่วนของปีก", value: "ปีกบน (Drumette) และ ปีกกลาง (Wingette)" },
+      { label: "สัดส่วนผงหมัก", value: "30g ผงหมัก + 15g กระเทียมสับ + 100ml น้ำเย็น" },
+      { label: "เวลาแช่หมัก", value: "4 - 12 ชั่วโมง" }
+    ],
+    ingredients: [
+      { name: "ปีกไก่สด (ปีกบน+ปีกกลาง)", amount: 1.0, unit: "kg" },
+      { name: "ผงหมักสูตรเข้มข้น ผมขอทอด", amount: 30, unit: "g" },
+      { name: "กระเทียมสับละเอียด", amount: 15, unit: "g" },
+      { name: "น้ำเย็นจัด", amount: 100, unit: "ml" }
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: "การล้าง บากปีกกลาง และซับแห้ง",
+        description: "นำปีกไก่ล้างน้ำสะอาด บากเนื้อปีกกลาง 1 รอยขนานกับกระดูก ใช้กระดาษอเนกประสงค์ซับน้ำให้แห้งสนิท",
+        imageUrl: SAMPLE_IMAGES.wingPrep,
+        timerSeconds: 0,
+        tip: "ปีกไก่ต้องแห้งสนิท เครื่องหมักจึงจะเกาะติดเนื้อไก่ได้ดี"
+      },
+      {
+        stepNumber: 2,
+        title: "การนวดหมักกระเทียมสด",
+        description: "ผสมผงหมัก 30g + กระเทียมสับ 15g + น้ำเย็น 100ml นวดเคล้ากับปีกไก่ 1kg ให้เข้ากัน 2 นาที",
+        imageUrl: SAMPLE_IMAGES.wingPrep,
+        timerSeconds: 120,
+        tip: "กระเทียมสับช่วยเพิ่มความหอมเฉพาะตัวให้ปีกไก่"
+      },
+      {
+        stepNumber: 3,
+        title: "การแช่เย็นควบคุมอุณหภูมิ",
+        description: "บรรจุใส่ภาชนะปิดฝา แช่ตู้เย็น 2-4°C เป็นเวลา 4-12 ชั่วโมง",
+        imageUrl: "",
+        timerSeconds: 0,
+        tip: "หมักอย่างน้อย 4 ชม. ก่อนนำออกมาชุบแป้งทอด"
+      }
+    ]
+  },
+
+  {
+    id: "sop-cook-sauce-coating",
+    title: "SOP การคลุกซอสไก่ทอด 4 สูตร Signature",
+    category: "cooking",
+    subCategory: "sauces-coating",
+    version: "1.0",
+    updatedAt: "2026-08-21 22:00",
+    author: "เชฟหัวหน้าครัวร้อน",
+    changeNotes: "กำหนดสัดส่วนซอส 4 รสชาติ 45-50g ต่อเสิร์ฟ",
+    versionHistory: [],
+    targetRole: ["kitchen", "front", "admin"],
+    prepTime: "1 นาที",
+    cookTime: "1 นาที",
+    yield: "1 เสิร์ฟ",
+    summary: "สัดส่วนซอส 45-50g ต่อเสิร์ฟ และเทคนิคการสะบัดอ่างคลุกซอสฉ่ำๆ",
+    tags: ["คลุกซอส", "เกาหลีเผ็ด", "โชยุ", "ฮันนี่มัสตาร์ด", "หม่าล่า", "การปรุงอาหาร"],
+    specifications: [
+      { label: "ซอสเกาหลีเผ็ดหวาน", value: "50g + งาขาวคั่ว 0.5g" },
+      { label: "ซอสกระเทียมโชยุ", value: "45g + กระเทียมเจียว 3g" },
+      { label: "ซอสมัสตาร์ดน้ำผึ้ง", value: "45g (ราดซิกแซก) + พาร์สลีย์" },
+      { label: "ซอสหม่าล่าสไปซี่", value: "45g + ผงหม่าล่า 1g" }
+    ],
+    ingredients: [
+      { name: "ไก่ทอดร้อนๆ", amount: 1, unit: "เสิร์ฟ" },
+      { name: "ซอสที่ลูกค้าเลือก", amount: 45, unit: "g" }
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: "การคลุกซอสในอ่างสแตนเลส",
+        description: "ใส่ไก่ทอดร้อนๆ ลงอ่าง ชั่งซอส 45-50g เขย่าอ่างวนเข็มนาฬิกาให้ซอสเคลือบไก่ทั่วถึง 100%",
+        imageUrl: SAMPLE_IMAGES.sauceCoating,
+        timerSeconds: 30,
+        tip: "ต้องคลุกขณะไก่ยังร้อน ซอสจึงจะซึมติดแป้ง"
+      }
+    ]
+  }
+];
+
+function sanitizeImageUrlsInSopList(sopList) {
+  if (!Array.isArray(sopList)) return sopList;
+  sopList.forEach(sop => {
+    if (Array.isArray(sop.steps)) {
+      sop.steps.forEach(step => {
+        if (step.imageUrl && step.imageUrl.startsWith("data:image/svg+xml;utf8,")) {
+          if (sop.id.includes("thigh")) step.imageUrl = SAMPLE_IMAGES.thighPrep;
+          else if (sop.id.includes("wing")) step.imageUrl = SAMPLE_IMAGES.wingPrep;
+          else if (sop.id.includes("sauce")) step.imageUrl = SAMPLE_IMAGES.sauceCoating;
+          else step.imageUrl = SAMPLE_IMAGES.frying;
+        }
+      });
+    }
+  });
+  return sopList;
+}
+
+function getSOPData() {
+  const local = localStorage.getItem("PKT_SOP_DATA_V7");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      return sanitizeImageUrlsInSopList(parsed);
+    } catch (e) {
+      console.error("Error parsing SOP data", e);
+    }
+  }
+  
+  saveSOPData(INITIAL_SOP_DATA);
+  return INITIAL_SOP_DATA;
+}
+
+function saveSOPData(data) {
+  localStorage.setItem("PKT_SOP_DATA_V7", JSON.stringify(data));
+  if (CLOUD_CONFIG.enabled) {
+    syncSOPDataToCloud(data);
+  }
+}
+
+// =========================================================================
+// 🌐 ฟังก์ชันซิงค์ข้อมูลกับคลาวด์ (Cloud API Functions)
+// =========================================================================
+async function syncSOPDataToCloud(data) {
+  if (!CLOUD_CONFIG.enabled) return;
+
+  if (CLOUD_CONFIG.type === "jsonbin") {
+    try {
+      await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey
+        },
+        body: JSON.stringify({ sopList: data, subCategories: getSubCategoriesData() })
+      });
+      console.log("☁️ Synced SOP Data to Cloud successfully!");
+    } catch (err) {
+      console.error("Cloud Sync Error:", err);
+    }
+  }
+}
+
+async function syncSubCategoriesToCloud(subCategoriesData) {
+  if (!CLOUD_CONFIG.enabled) return;
+
+  if (CLOUD_CONFIG.type === "jsonbin") {
+    try {
+      await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey
+        },
+        body: JSON.stringify({ sopList: getSOPData(), subCategories: subCategoriesData })
+      });
+      console.log("☁️ Synced Sub Categories to Cloud successfully!");
+    } catch (err) {
+      console.error("Cloud Sync Sub Categories Error:", err);
+    }
+  }
+}
+
+async function fetchSOPDataFromCloud() {
+  if (!CLOUD_CONFIG.enabled) return null;
+
+  if (CLOUD_CONFIG.type === "jsonbin") {
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}/latest`, {
+        headers: { "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey }
+      });
+      const result = await res.json();
+      if (result.record && result.record.sopList && Array.isArray(result.record.sopList) && result.record.sopList.length > 0) {
+        saveSOPData(result.record.sopList);
+        if (result.record.subCategories && Array.isArray(result.record.subCategories) && result.record.subCategories.length > 0) {
+          localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(result.record.subCategories));
+        }
+        return result.record.sopList;
+      }
+    } catch (err) {
+      console.error("Fetch Cloud Data Error:", err);
+    }
+  }
+  return null;
+}

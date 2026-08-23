@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบ SOP ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod) - Dynamic Workflow Portal</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navbar & User Session Info -->
+  <header class="top-navbar">
+    <a href="#" class="brand-logo" onclick="backToGrid()">
+      <img src="assets/logo.png" alt="ผมขอทอด" class="brand-logo-img" />
+      <span>ผมขอทอด</span>
+      <span class="brand-badge">SOP PORTAL</span>
+    </a>
+
+    <!-- Navbar Logged-in User Profile & Logout Area -->
+    <div id="navbarAuthArea" style="display: flex; align-items: center; gap: 1rem;"></div>
+
+    <button onclick="toggleTheme()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+      🌗 เปลี่ยนธีม
+    </button>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation Divided by Dynamic Operational Workflows -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-title">ขั้นตอนการทำงาน (WORKFLOW STAGES)</div>
+        <nav class="category-nav" id="sidebarNavContainer">
+          <!-- Dynamic Sub-category list populated by app.js -->
+        </nav>
+      </div>
+
+      <!-- Quick Admin Tools -->
+      <div class="quick-tools-box admin-only">
+        <div class="quick-tools-title">
+          <span>🛠️ เครื่องมือผู้จัดการ/แอดมิน</span>
+        </div>
+        <button class="action-btn btn-primary" onclick="openAddSOPModal()">
+          ➕ เพิ่ม SOP ใหม่
+        </button>
+        <button class="action-btn btn-secondary" onclick="openManageSubCategoriesModal()">
+          ⚙️ เพิ่ม/จัดการชื่อวัตถุดิบใหม่
+        </button>
+        <button class="action-btn btn-secondary" onclick="openManageAccountsModal()">
+          🔐 จัดการรหัสผ่านพนักงาน
+        </button>
+        <button class="action-btn btn-secondary" onclick="exportSOPJSON()">
+          📤 ส่งออก JSON สำรอง
+        </button>
+        <button class="action-btn btn-secondary" onclick="importSOPJSON()">
+          📥 นำเข้า JSON
+        </button>
+        <button class="action-btn btn-secondary" onclick="resetToDefaultSOP()" style="color: #f87171;">
+          🔄 รีเซ็ตค่าเริ่มต้น
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content -->
+    <main class="main-content">
+      <!-- Search Filter Bar -->
+      <div style="margin-bottom: 1.25rem;">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาคู่มือ SOP, วัตถุดิบ, ขั้นตอนการทอด, ซอส..." />
+        </div>
+      </div>
+
+      <!-- Dynamic Render Area -->
+      <div id="sopContentArea"></div>
+    </main>
+
+  </div>
+
+  <!-- Floating Kitchen Cooking Timer Widget -->
+  <div class="kitchen-timer-widget" id="kitchenTimerWidget" style="display: none;">
+    <div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;" id="timerWidgetTitle">นาฬิกาจับเวลาทอด</div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+    <div class="timer-controls">
+      <button class="action-btn btn-primary" id="timerToggleBtn" onclick="toggleKitchenTimer()" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+        ⏸️ พัก
+      </button>
+      <button class="action-btn btn-secondary" onclick="resetKitchenTimer()" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+        ✕ ปิด
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/cms.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
