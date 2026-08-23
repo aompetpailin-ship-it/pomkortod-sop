@@ -1,6 +1,6 @@
 /**
  * ระบบจัดการและแก้ไขข้อมูล SOP (Admin CMS Module)
- * เพิ่มระบบแปลงรูปภาพ HEIC / iPhone / รูปขนาดใหญ่ ให้เป็น JPEG มาตรฐานอัตโนมัติ (Auto Canvas JPEG Converter)
+ * ปรับระบบบีบอัดภาพถ่ายให้อัลตร้าไลท์เวท เพื่อการบันทึกคลาวด์ที่รวดเร็วและไม่ติดโควต้า
  */
 
 let currentEditingSteps = [];
@@ -77,7 +77,7 @@ function openEditSOPModal(sopId = null) {
           <div class="modal-header">
             <div>
               <h3 style="font-size: 1.25rem; color: #fbbf24;">${isEdit ? "✏️ แก้ไขคู่มือ SOP & สูตรอาหาร" : "➕ เพิ่มคู่มือ SOP ใหม่"}</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">รองรับการแปลงรูปถ่าย iPhone (.HEIC) เป็น JPEG อัตโนมัติ</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">ระบบจะทำการบันทึกและซิงค์ข้อมูลลงคลาวด์อัตโนมัติ</span>
             </div>
             <button type="button" onclick="closeModal('cmsModalOverlay')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
           </div>
@@ -168,7 +168,7 @@ function openEditSOPModal(sopId = null) {
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
                   <h4 style="font-size: 1.1rem; color: #fbbf24;">🖼️ จัดการขั้นตอนและรูปภาพประกอบ (Step Builder)</h4>
-                  <span style="font-size: 0.75rem; color: var(--text-muted);">รองรับรูปภาพ JPG, PNG และภาพถ่าย iPhone (แปลงอัตโนมัติ)</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">รองรับรูปภาพ JPG, PNG และภาพถ่าย iPhone (แปลงบีบอัดอัตโนมัติ)</span>
                 </div>
                 <button type="button" class="action-btn btn-secondary" onclick="addNewStepRow()" style="width: auto; padding: 0.4rem 0.8rem;">
                   ➕ เพิ่มขั้นตอนใหม่
@@ -191,7 +191,7 @@ function openEditSOPModal(sopId = null) {
               </div>
               <div style="display: flex; gap: 0.5rem;">
                 <button type="button" class="action-btn btn-secondary" onclick="closeModal('cmsModalOverlay')">ยกเลิก</button>
-                <button type="submit" class="action-btn btn-primary" style="width:auto;">💾 บันทึก SOP เวอร์ชันใหม่</button>
+                <button type="submit" class="action-btn btn-primary" style="width:auto;">💾 บันทึก SOP ลงคลาวด์</button>
               </div>
             </div>
           </form>
@@ -332,9 +332,6 @@ function removeStepImage(index) {
   renderStepsBuilder();
 }
 
-/**
- * ฟังก์ชันจัดการอัปโหลดภาพ พร้อมระบบแปลงไฟล์ HEIC/iPhone เป็น JPEG มาตรฐานอัตโนมัติผ่าน Canvas
- */
 function handleStepImageUpload(event, index) {
   const file = event.target.files[0];
   if (!file) return;
@@ -348,12 +345,12 @@ function handleStepImageUpload(event, index) {
     const img = new Image();
     img.onload = () => {
       try {
-        // ใช้ Canvas แปลงรูปเป็น JPEG มาตรฐาน และบีบอัดขนาดไม่เกิน 1200px
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
 
-        const MAX_WIDTH = 1200;
+        // ปรับความกว้างสูงสุดเป็น 650px บีบอัดคุณภาพ 0.65 ให้น้ำหนักเบาพิเศษสำหรับคลาวด์
+        const MAX_WIDTH = 650;
         if (width > MAX_WIDTH) {
           height = Math.round((height * MAX_WIDTH) / width);
           width = MAX_WIDTH;
@@ -365,8 +362,7 @@ function handleStepImageUpload(event, index) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
-        // แปลงเป็น JPEG Data URL คมชัด น้ำหนักเบา แสดงได้ทุกอุปกรณ์ 100%
-        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.65);
 
         if (currentEditingSteps[index]) {
           currentEditingSteps[index].imageUrl = jpegDataUrl;
@@ -375,7 +371,6 @@ function handleStepImageUpload(event, index) {
         showToast("📸 อัปโหลดและแปลงรูปภาพเป็น JPEG เรียบร้อยแล้ว!");
       } catch (err) {
         console.error("Canvas convert error:", err);
-        // Fallback หากแปลง Canvas ล้มเหลว
         if (currentEditingSteps[index]) {
           currentEditingSteps[index].imageUrl = e.target.result;
         }
@@ -523,7 +518,7 @@ function parseIngredientsFromTextarea(text) {
   return result;
 }
 
-function handleSaveSOP(event, id) {
+async function handleSaveSOP(event, id) {
   if (event) event.preventDefault();
   
   try {
@@ -618,7 +613,14 @@ function handleSaveSOP(event, id) {
     renderSidebarNavigation();
     renderSOPList();
 
-    showToast(`💾 บันทึก SOP เวอร์ชัน v${version} เรียบร้อยแล้ว!`);
+    showToast(`⏳ กำลังซิงค์สูตร v${version} ลงคลาวด์กลาง...`, "info", 1500);
+
+    const isCloudSuccess = await syncSOPDataToCloud(allSop);
+    if (isCloudSuccess) {
+      showToast(`☁️ บันทึกและซิงค์สูตร v${version} ลงคลาวด์เรียบร้อยแล้ว!`);
+    } else {
+      showToast(`💾 บันทึกสำเร็จในเครื่อง (คลาวด์ซิงค์ชั่วคราว)`);
+    }
   } catch (err) {
     console.error("Error saving SOP:", err);
     showToast("เกิดข้อผิดพลาดในการบันทึก: " + err.message, "error");
@@ -658,7 +660,7 @@ function importSOPJSON() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = event => {
+    reader.onload = async event => {
       try {
         const imported = JSON.parse(event.target.result);
         if (imported.sopList && Array.isArray(imported.sopList)) {
@@ -666,12 +668,14 @@ function importSOPJSON() {
           if (imported.subCategories) saveSubCategoriesData(imported.subCategories);
           renderSidebarNavigation();
           renderSOPList();
-          showToast("📥 นำเข้าข้อมูล SOP และประวัติสูตรสำเร็จแล้ว!");
+          await syncSOPDataToCloud(imported.sopList);
+          showToast("📥 นำเข้าและซิงค์ข้อมูล SOP ลงคลาวด์สำเร็จแล้ว!");
         } else if (Array.isArray(imported)) {
           saveSOPData(imported);
           renderSidebarNavigation();
           renderSOPList();
-          showToast("📥 นำเข้าข้อมูล SOP สำเร็จแล้ว!");
+          await syncSOPDataToCloud(imported);
+          showToast("📥 นำเข้าและซิงค์ข้อมูล SOP สำเร็จแล้ว!");
         } else {
           showToast("รูปแบบไฟล์ JSON ไม่ถูกต้อง", "error");
         }
@@ -684,9 +688,23 @@ function importSOPJSON() {
   input.click();
 }
 
+async function handleManualCloudPull() {
+  showToast("☁️ กำลังดึงสูตรอาหารล่าสุดจากคลาวด์...", "info", 1500);
+  if (typeof fetchSOPDataFromCloud === "function") {
+    const cloudData = await fetchSOPDataFromCloud();
+    if (cloudData) {
+      renderSidebarNavigation();
+      renderSOPList();
+      showToast("✅ ดึงสูตรอาหารล่าสุดจากคลาวด์สำเร็จแล้ว!");
+    } else {
+      showToast("⚠️ ไม่พบข้อมูลสูตรใหม่บนคลาวด์ หรือยังไม่ได้บันทึกสูตร", "error");
+    }
+  }
+}
+
 function resetToDefaultSOP() {
   if (confirm("⚠️ คุณต้องการรีเซ็ตข้อมูล SOP และหมวดหมู่ย่อยทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) {
-    localStorage.removeItem("PKT_SOP_DATA_V6");
+    localStorage.removeItem("PKT_SOP_DATA_V7");
     localStorage.removeItem("PKT_SUB_CATEGORIES_V1");
     renderSidebarNavigation();
     renderSOPList();

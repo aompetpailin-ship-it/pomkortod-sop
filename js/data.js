@@ -1,17 +1,56 @@
 /**
  * ฐานข้อมูล SOP และระบบซิงค์คลาวด์อัตโนมัติ (Centralized Cloud Database Sync)
  * ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod)
- * เชื่อมต่อคลาวด์ JSONBin เรียลไทม์ 100% (Bin ID: 6a8b1844f5f4af5e2938cd01)
+ * รองรับทั้ง Google Firebase Realtime Database (แนะนำ - ป้องกัน CORS 100%) และ JSONBin Cloud
  */
 
 const CLOUD_CONFIG = {
   enabled: true,
-  type: "jsonbin",
+  type: "firebase", // "firebase" หรือ "jsonbin"
+  firebase: {
+    databaseURL: "https://pomkhorthod-sop-default-rtdb.firebaseio.com" // Google Firebase Database
+  },
   jsonbin: {
     binId: "6a8b1844f5f4af5e2938cd01",
     apiKey: "$2a$10$8lCsw6RsO5NfEn9BF0t0pe8GubFnrevKbsAkps3BIAwyRcmAp0HGK"
   }
 };
+
+// เริ่มต้นเปิดระบบ Firebase หากมี SDK
+let firebaseApp = null;
+let firebaseDb = null;
+
+function initFirebaseCloud() {
+  if (typeof firebase !== "undefined" && !firebaseDb) {
+    try {
+      if (!firebase.apps.length) {
+        firebaseApp = firebase.initializeApp({
+          databaseURL: CLOUD_CONFIG.firebase.databaseURL
+        });
+      } else {
+        firebaseApp = firebase.app();
+      }
+      firebaseDb = firebase.database();
+      console.log("🔥 Google Firebase Realtime Database initialized successfully!");
+      
+      // ตั้งค่าฟังการเปลี่ยนแปลงข้อมูลเรียลไทม์ข้ามอุปกรณ์
+      firebaseDb.ref("sopData").on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.sopList && Array.isArray(data.sopList)) {
+          localStorage.setItem("PKT_SOP_DATA_V7", JSON.stringify(data.sopList));
+          if (data.subCategories && Array.isArray(data.subCategories)) {
+            localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(data.subCategories));
+          }
+          if (typeof renderSidebarNavigation === "function") renderSidebarNavigation();
+          if (typeof renderSOPList === "function") renderSOPList();
+          console.log("🔥 Realtime Cloud Sync updated from Firebase!");
+        }
+      });
+    } catch (e) {
+      console.error("Firebase Init Error:", e);
+    }
+  }
+}
 
 const DEFAULT_SUB_CATEGORIES = [
   { id: "thigh", stage: "prep", label: "สะโพกไก่ดิบ" },
@@ -272,69 +311,157 @@ function getSOPData() {
 
 function saveSOPData(data) {
   localStorage.setItem("PKT_SOP_DATA_V7", JSON.stringify(data));
-  if (CLOUD_CONFIG.enabled) {
-    syncSOPDataToCloud(data);
-  }
+}
+
+function prepareLightweightCloudPayload(sopList) {
+  if (!Array.isArray(sopList)) return [];
+  const cleanList = JSON.parse(JSON.stringify(sopList));
+  cleanList.forEach(sop => {
+    if (Array.isArray(sop.versionHistory)) {
+      sop.versionHistory = sop.versionHistory.map(h => ({
+        version: h.version,
+        updatedAt: h.updatedAt,
+        author: h.author,
+        changeNotes: h.changeNotes
+      }));
+    }
+  });
+  return cleanList;
 }
 
 // =========================================================================
 // 🌐 ฟังก์ชันซิงค์ข้อมูลกับคลาวด์ (Cloud API Functions)
 // =========================================================================
 async function syncSOPDataToCloud(data) {
-  if (!CLOUD_CONFIG.enabled) return;
+  if (!CLOUD_CONFIG.enabled) return false;
 
-  if (CLOUD_CONFIG.type === "jsonbin") {
+  // ลองใช้งาน Firebase Realtime Database ก่อน (CORS-Free 100%)
+  if (firebaseDb) {
     try {
-      await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}`, {
+      const lightweightData = prepareLightweightCloudPayload(data);
+      await firebaseDb.ref("sopData").set({
+        sopList: lightweightData,
+        subCategories: getSubCategoriesData(),
+        updatedAt: new Date().toISOString()
+      });
+      console.log("🔥 Synced to Google Firebase Cloud!");
+      return true;
+    } catch (e) {
+      console.error("Firebase Sync Error:", e);
+    }
+  }
+
+  // Fallback ไปใช้ JSONBin หากกำหนดรหัสไว้
+  if (CLOUD_CONFIG.type === "jsonbin" && CLOUD_CONFIG.jsonbin.apiKey !== "YOUR_MASTER_KEY_HERE") {
+    try {
+      const lightweightData = prepareLightweightCloudPayload(data);
+
+      const response = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey
+          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey,
+          "X-Bin-Versioning": "false"
         },
-        body: JSON.stringify({ sopList: data, subCategories: getSubCategoriesData() })
+        body: JSON.stringify({ sopList: lightweightData, subCategories: getSubCategoriesData() })
       });
-      console.log("☁️ Synced SOP Data to Cloud successfully!");
+
+      if (response.ok) {
+        console.log("☁️ Synced SOP Data to JSONBin Cloud successfully!");
+        return true;
+      }
     } catch (err) {
-      console.error("Cloud Sync Error:", err);
+      console.error("JSONBin Cloud Sync Error:", err);
     }
   }
+  return false;
 }
 
 async function syncSubCategoriesToCloud(subCategoriesData) {
-  if (!CLOUD_CONFIG.enabled) return;
+  if (!CLOUD_CONFIG.enabled) return false;
 
-  if (CLOUD_CONFIG.type === "jsonbin") {
+  if (firebaseDb) {
     try {
+      await firebaseDb.ref("sopData/subCategories").set(subCategoriesData);
+      return true;
+    } catch (e) {
+      console.error("Firebase SubCats Sync Error:", e);
+    }
+  }
+
+  if (CLOUD_CONFIG.type === "jsonbin" && CLOUD_CONFIG.jsonbin.apiKey !== "YOUR_MASTER_KEY_HERE") {
+    try {
+      const lightweightData = prepareLightweightCloudPayload(getSOPData());
       await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey
+          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey,
+          "X-Bin-Versioning": "false"
         },
-        body: JSON.stringify({ sopList: getSOPData(), subCategories: subCategoriesData })
+        body: JSON.stringify({ sopList: lightweightData, subCategories: subCategoriesData })
       });
-      console.log("☁️ Synced Sub Categories to Cloud successfully!");
+      return true;
     } catch (err) {
       console.error("Cloud Sync Sub Categories Error:", err);
+      return false;
     }
   }
+  return false;
 }
 
 async function fetchSOPDataFromCloud() {
   if (!CLOUD_CONFIG.enabled) return null;
 
-  if (CLOUD_CONFIG.type === "jsonbin") {
+  initFirebaseCloud();
+
+  // ลองใช้งาน Firebase ก่อน
+  if (firebaseDb) {
     try {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}/latest`, {
-        headers: { "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey }
-      });
-      const result = await res.json();
-      if (result.record && result.record.sopList && Array.isArray(result.record.sopList) && result.record.sopList.length > 0) {
-        saveSOPData(result.record.sopList);
-        if (result.record.subCategories && Array.isArray(result.record.subCategories) && result.record.subCategories.length > 0) {
-          localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(result.record.subCategories));
+      const snapshot = await firebaseDb.ref("sopData").once("value");
+      const val = snapshot.val();
+      if (val && val.sopList && Array.isArray(val.sopList) && val.sopList.length > 0) {
+        saveSOPData(val.sopList);
+        if (val.subCategories && Array.isArray(val.subCategories)) {
+          localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(val.subCategories));
         }
-        return result.record.sopList;
+        console.log("🔥 Fetched from Google Firebase Cloud successfully!");
+        return val.sopList;
+      }
+    } catch (e) {
+      console.error("Firebase Fetch Error:", e);
+    }
+  }
+
+  // Fallback ไปใช้ JSONBin
+  if (CLOUD_CONFIG.type === "jsonbin" && CLOUD_CONFIG.jsonbin.apiKey !== "YOUR_MASTER_KEY_HERE") {
+    try {
+      let res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}/latest`, {
+        headers: {
+          "X-Master-Key": CLOUD_CONFIG.jsonbin.apiKey,
+          "X-Bin-Meta": "false"
+        }
+      });
+
+      if (!res.ok) {
+        res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.jsonbin.binId}/latest`, {
+          headers: { "X-Bin-Meta": "false" }
+        });
+      }
+
+      if (res.ok) {
+        const record = await res.json();
+        const sopList = record.sopList || (record.record && record.record.sopList);
+        const subCategories = record.subCategories || (record.record && record.record.subCategories);
+
+        if (Array.isArray(sopList) && sopList.length > 0) {
+          saveSOPData(sopList);
+          if (Array.isArray(subCategories) && subCategories.length > 0) {
+            localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(subCategories));
+          }
+          console.log("☁️ Fetched latest Cloud Data successfully!", sopList.length, "SOP items");
+          return sopList;
+        }
       }
     } catch (err) {
       console.error("Fetch Cloud Data Error:", err);

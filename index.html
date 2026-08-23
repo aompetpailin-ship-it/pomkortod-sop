@@ -12,6 +12,10 @@
   
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Firebase Web SDK for Realtime CORS-Free Cloud Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -44,26 +48,29 @@
       </div>
 
       <!-- Quick Admin Tools -->
-      <div class="quick-tools-box admin-only">
+      <div class="quick-tools-box">
         <div class="quick-tools-title">
-          <span>🛠️ เครื่องมือผู้จัดการ/แอดมิน</span>
+          <span>☁️ ระบบคลาวด์และเครื่องมือจัดการ</span>
         </div>
-        <button class="action-btn btn-primary" onclick="openAddSOPModal()">
+        <button class="action-btn btn-primary" onclick="handleManualCloudPull()" style="background: #059669; color: white;">
+          ☁️ ดึงสูตรล่าสุดจากคลาวด์
+        </button>
+        <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()">
           ➕ เพิ่ม SOP ใหม่
         </button>
-        <button class="action-btn btn-secondary" onclick="openManageSubCategoriesModal()">
+        <button class="action-btn btn-secondary admin-only" onclick="openManageSubCategoriesModal()">
           ⚙️ เพิ่ม/จัดการชื่อวัตถุดิบใหม่
         </button>
-        <button class="action-btn btn-secondary" onclick="openManageAccountsModal()">
+        <button class="action-btn btn-secondary admin-only" onclick="openManageAccountsModal()">
           🔐 จัดการรหัสผ่านพนักงาน
         </button>
-        <button class="action-btn btn-secondary" onclick="exportSOPJSON()">
+        <button class="action-btn btn-secondary admin-only" onclick="exportSOPJSON()">
           📤 ส่งออก JSON สำรอง
         </button>
-        <button class="action-btn btn-secondary" onclick="importSOPJSON()">
+        <button class="action-btn btn-secondary admin-only" onclick="importSOPJSON()">
           📥 นำเข้า JSON
         </button>
-        <button class="action-btn btn-secondary" onclick="resetToDefaultSOP()" style="color: #f87171;">
+        <button class="action-btn btn-secondary admin-only" onclick="resetToDefaultSOP()" style="color: #f87171;">
           🔄 รีเซ็ตค่าเริ่มต้น
         </button>
       </div>
