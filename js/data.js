@@ -86,6 +86,8 @@ function getSubCategoriesData() {
 
 function saveSubCategoriesData(data) {
   localStorage.setItem("PKT_SUB_CATEGORIES_V1", JSON.stringify(data));
+  // อัปเดตไปยัง Supabase Cloud เสมอ
+  syncSubCategoriesToCloud(data);
 }
 
 function addSubCategoryItem(stage, label) {
@@ -318,7 +320,7 @@ function saveSOPData(data) {
   } catch (e) {
     console.warn("LocalStorage quota exceeded (5MB limit). Saving directly to Supabase Cloud instead.", e);
   }
-  // ซิงค์ไปยัง Supabase Cloud เสมอ (Supabase ไม่จำกัด 5MB เหมือน LocalStorage)
+  // ซิงค์ไปยัง Supabase Cloud เสมอ
   syncSOPToSupabaseCloud(data);
 }
 
@@ -340,7 +342,6 @@ async function fetchSOPDataFromCloud() {
 
     if (error) {
       console.warn("Supabase Fetch Warning:", error.message);
-      if (typeof showToast === "function") showToast("⚠️ Supabase Fetch Error: " + error.message, "error", 4000);
       return null;
     }
 
@@ -352,7 +353,6 @@ async function fetchSOPDataFromCloud() {
     }
   } catch (err) {
     console.error("Supabase Cloud Fetch Error:", err);
-    if (typeof showToast === "function") showToast("⚠️ เกิดข้อผิดพลาดเชื่อมต่อ Supabase: " + err.message, "error", 4000);
   }
   return null;
 }
@@ -382,6 +382,29 @@ async function syncSOPToSupabaseCloud(sopList) {
     }
   } catch (err) {
     console.error("Supabase Cloud Sync Error:", err);
+  }
+}
+
+async function syncSubCategoriesToCloud(subCatList) {
+  const client = initSupabaseClient();
+  if (!client || !Array.isArray(subCatList)) return;
+
+  try {
+    const { error } = await client
+      .from('sop_data')
+      .upsert({
+        id: '_sub_categories_config',
+        title: 'Subcategories Configuration',
+        category: 'config',
+        sub_category: 'config',
+        updated_at: new Date().toISOString(),
+        sop_content: subCatList
+      }, { onConflict: 'id' });
+    if (!error) {
+      console.log("⚡ Synced Subcategories Config to Supabase Cloud!");
+    }
+  } catch (err) {
+    console.error("Sync Subcategories Error:", err);
   }
 }
 
