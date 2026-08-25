@@ -737,3 +737,106 @@ body {
     justify-content: space-between;
   }
 }
+
+/* =========================================================================
+ * 🖨️ Professional Print Stylesheet (สำหรับพิมพ์เล่มคู่มือ A4 SOP ร้านผมขอทอด)
+ * ========================================================================= */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  .top-navbar, .sidebar, .search-box, .back-btn, .timer-start-btn, 
+  .kitchen-timer-widget, .quick-tools-box, #cloudStatusBadge, button {
+    display: none !important;
+  }
+
+  .app-container {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .main-content {
+    padding: 0 !important;
+  }
+
+  .sop-detail-view {
+    background: #ffffff !important;
+    border: 2px solid #000000 !important;
+    color: #000000 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    page-break-after: always;
+  }
+
+  .sop-detail-title {
+    color: #000000 !important;
+    font-size: 20pt !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #000;
+    padding-bottom: 8px;
+  }
+
+  .specs-grid {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+  }
+
+  .spec-label {
+    color: #475569 !important;
+  }
+
+  .spec-value {
+    color: #000000 !important;
+  }
+
+  .ingredients-box {
+    background: #f1f5f9 !important;
+    border-left: 4px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  .ingredient-item {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+  }
+
+  .step-card {
+    background: #ffffff !important;
+    border: 1px solid #94a3b8 !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+  }
+
+  .step-number {
+    background: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  .step-title {
+    color: #000000 !important;
+  }
+
+  .step-desc {
+    color: #1e293b !important;
+  }
+
+  .step-image-thumb {
+    max-height: 180px !important;
+    object-fit: contain !important;
+    border: 1px solid #ccc;
+  }
+
+  .step-tip {
+    background: #f0fdf4 !important;
+    border-left: 3px solid #16a34a !important;
+    color: #15803d !important;
+  }
+}

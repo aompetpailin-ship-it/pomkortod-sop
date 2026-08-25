@@ -15,12 +15,19 @@ const CLOUD_CONFIG = {
 let supabaseClient = null;
 
 function initSupabaseClient() {
-  if (typeof window.supabase !== "undefined" && CLOUD_CONFIG.supabaseUrl && CLOUD_CONFIG.supabaseKey && CLOUD_CONFIG.supabaseUrl !== "YOUR_SUPABASE_URL_HERE") {
+  const supabaseObj = window.supabase || (window.supabaseJS ? window.supabaseJS : null);
+  if (supabaseObj && CLOUD_CONFIG.supabaseUrl && CLOUD_CONFIG.supabaseKey && CLOUD_CONFIG.supabaseUrl !== "YOUR_SUPABASE_URL_HERE") {
     try {
       if (!supabaseClient) {
-        supabaseClient = window.supabase.createClient(CLOUD_CONFIG.supabaseUrl, CLOUD_CONFIG.supabaseKey);
-        console.log("🚀 Supabase Cloud Client Initialized!");
-        subscribeToSupabaseRealtime();
+        if (typeof supabaseObj.createClient === "function") {
+          supabaseClient = supabaseObj.createClient(CLOUD_CONFIG.supabaseUrl, CLOUD_CONFIG.supabaseKey);
+        } else if (typeof window.createClient === "function") {
+          supabaseClient = window.createClient(CLOUD_CONFIG.supabaseUrl, CLOUD_CONFIG.supabaseKey);
+        }
+        if (supabaseClient) {
+          console.log("🚀 Supabase Cloud Client Initialized successfully!");
+          subscribeToSupabaseRealtime();
+        }
       }
       return supabaseClient;
     } catch (e) {
@@ -42,7 +49,7 @@ function subscribeToSupabaseRealtime() {
         if (cloudData) {
           if (typeof renderSidebarNavigation === "function") renderSidebarNavigation();
           if (typeof renderSOPList === "function") renderSOPList();
-          if (typeof showToast === "function") showToast("⚡ อัปเดตสูตรอาหารใหม่จากคลาวด์เรียบร้อยแล้ว!", "info", 2000);
+          if (typeof showToast === "function") showToast("⚡ อัปเดตสูตรอาหารใหม่จากคลาวด์เรียบร้อยแล้ว!", "info", 2500);
         }
       })
       .subscribe();
@@ -306,8 +313,12 @@ function getSOPData() {
 }
 
 function saveSOPData(data) {
-  localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(data));
-  // ซิงค์ไปยัง Supabase Cloud ถ้าเปิดใช้งานอยู่
+  try {
+    localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(data));
+  } catch (e) {
+    console.warn("LocalStorage quota exceeded (5MB limit). Saving directly to Supabase Cloud instead.", e);
+  }
+  // ซิงค์ไปยัง Supabase Cloud เสมอ (Supabase ไม่จำกัด 5MB เหมือน LocalStorage)
   syncSOPToSupabaseCloud(data);
 }
 
@@ -316,7 +327,10 @@ function saveSOPData(data) {
 // =========================================================================
 async function fetchSOPDataFromCloud() {
   const client = initSupabaseClient();
-  if (!client) return null;
+  if (!client) {
+    console.warn("Supabase Client is not initialized.");
+    return null;
+  }
 
   try {
     const { data, error } = await client
@@ -326,6 +340,7 @@ async function fetchSOPDataFromCloud() {
 
     if (error) {
       console.warn("Supabase Fetch Warning:", error.message);
+      if (typeof showToast === "function") showToast("⚠️ Supabase Fetch Error: " + error.message, "error", 4000);
       return null;
     }
 
@@ -337,6 +352,7 @@ async function fetchSOPDataFromCloud() {
     }
   } catch (err) {
     console.error("Supabase Cloud Fetch Error:", err);
+    if (typeof showToast === "function") showToast("⚠️ เกิดข้อผิดพลาดเชื่อมต่อ Supabase: " + err.message, "error", 4000);
   }
   return null;
 }

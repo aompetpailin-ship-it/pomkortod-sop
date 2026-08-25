@@ -349,8 +349,8 @@ function handleStepImageUpload(event, index) {
         let width = img.width;
         let height = img.height;
 
-        // ปรับความกว้างสูงสุดเป็น 650px บีบอัดคุณภาพ 0.65 ให้น้ำหนักเบาพิเศษสำหรับคลาวด์
-        const MAX_WIDTH = 650;
+        // ปรับความกว้างสูงสุดเป็น 500px บีบอัดคุณภาพ 0.5 ให้น้ำหนักเบาพิเศษ
+        const MAX_WIDTH = 500;
         if (width > MAX_WIDTH) {
           height = Math.round((height * MAX_WIDTH) / width);
           width = MAX_WIDTH;
@@ -362,13 +362,13 @@ function handleStepImageUpload(event, index) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
-        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.65);
+        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.5);
 
         if (currentEditingSteps[index]) {
           currentEditingSteps[index].imageUrl = jpegDataUrl;
         }
         renderStepsBuilder();
-        showToast("📸 อัปโหลดและแปลงรูปภาพเป็น JPEG เรียบร้อยแล้ว!");
+        showToast("📸 อัปโหลดและบีบอัดรูปภาพเรียบร้อยแล้ว!");
       } catch (err) {
         console.error("Canvas convert error:", err);
         if (currentEditingSteps[index]) {

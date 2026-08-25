@@ -11,10 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=14">
 
-  <!-- Supabase Enterprise Cloud Client SDK (PostgreSQL Realtime) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase Enterprise Cloud Client SDK (Local Offline Bundle + Realtime) -->
+  <script src="js/supabase.js?v=14"></script>
 </head>
 <body>
 
@@ -25,6 +25,12 @@
       <span>ผมขอทอด</span>
       <span class="brand-badge">SOP PORTAL</span>
     </a>
+
+    <!-- Supabase Cloud Connection Status Indicator -->
+    <div id="cloudStatusBadge" style="display: flex; align-items: center; gap: 0.4rem; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; color: #34d399; font-weight: 600; cursor: pointer;" onclick="handleManualCloudPull()">
+      <span style="width: 8px; height: 8px; background-color: #34d399; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #34d399;"></span>
+      <span>Supabase Realtime: เชื่อมต่อแล้ว</span>
+    </div>
 
     <!-- Navbar Logged-in User Profile & Logout Area -->
     <div id="navbarAuthArea" style="display: flex; align-items: center; gap: 1rem;"></div>
@@ -52,7 +58,7 @@
           <span>🚀 Supabase Cloud Database</span>
         </div>
         <button class="action-btn btn-primary" onclick="handleManualCloudPull()" style="background: #059669; color: white;">
-          🔄 ซิงค์สูตรจาก Supabase
+          🔄 ดึงสูตรล่าสุดจาก Supabase
         </button>
         <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()">
           ➕ เพิ่ม SOP ใหม่
@@ -108,11 +114,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/data.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/timer.js"></script>
-  <script src="js/calculator.js"></script>
-  <script src="js/cms.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js?v=14"></script>
+  <script src="js/auth.js?v=14"></script>
+  <script src="js/timer.js?v=14"></script>
+  <script src="js/calculator.js?v=14"></script>
+  <script src="js/cms.js?v=14"></script>
+  <script src="js/app.js?v=14"></script>
 </body>
 </html>
