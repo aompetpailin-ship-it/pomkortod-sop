@@ -689,22 +689,105 @@ function importSOPJSON() {
 }
 
 async function handleManualCloudPull() {
-  showToast("☁️ กำลังดึงสูตรอาหารล่าสุดจากคลาวด์...", "info", 1500);
+  if (CLOUD_CONFIG.supabaseUrl === "YOUR_SUPABASE_URL_HERE") {
+    openSupabaseSettingsModal();
+    return;
+  }
+  showToast("☁️ กำลังดึงสูตรอาหารล่าสุดจาก Supabase Cloud...", "info", 1500);
   if (typeof fetchSOPDataFromCloud === "function") {
     const cloudData = await fetchSOPDataFromCloud();
     if (cloudData) {
       renderSidebarNavigation();
       renderSOPList();
-      showToast("✅ ดึงสูตรอาหารล่าสุดจากคลาวด์สำเร็จแล้ว!");
+      showToast("✅ ดึงสูตรอาหารล่าสุดจาก Supabase สำเร็จแล้ว!");
     } else {
-      showToast("⚠️ ไม่พบข้อมูลสูตรใหม่บนคลาวด์ หรือยังไม่ได้บันทึกสูตร", "error");
+      showToast("⚠️ ยังไม่พบข้อมูลในตาราง sop_data หรือยังสร้างตารางไม่เสร็จ", "error");
     }
   }
 }
 
+function openSupabaseSettingsModal() {
+  const currentUrl = CLOUD_CONFIG.supabaseUrl === "YOUR_SUPABASE_URL_HERE" ? "" : CLOUD_CONFIG.supabaseUrl;
+  const currentKey = CLOUD_CONFIG.supabaseKey === "YOUR_SUPABASE_ANON_KEY_HERE" ? "" : CLOUD_CONFIG.supabaseKey;
+
+  const modalHtml = `
+    <div class="modal-overlay" id="supabaseSettingsModal">
+      <div class="modal-card" style="max-width: 650px;">
+        <div class="modal-header">
+          <div>
+            <h3 style="font-size: 1.25rem; color: #10b981;">🚀 ตั้งค่าเชื่อมต่อ Supabase Database</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">ระบบฐานข้อมูลคลาวด์ ซิงค์สูตรเรียลไทม์ 0.1s ข้ามทุกเครื่อง</span>
+          </div>
+          <button type="button" onclick="closeModal('supabaseSettingsModal')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveSupabaseConfig(event)">
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.5;">
+            📌 <b>ขั้นตอนง่ายๆ 30 วินาที:</b><br>
+            1. ไปที่ <a href="https://supabase.com" target="_blank" style="color: #34d399; font-weight: bold;">supabase.com</a> กดสมัครฟรี ➔ สร้างโปรเจกต์ใหม่<br>
+            2. ไปที่ <b>⚙️ Project Settings ➔ API</b><br>
+            3. ก๊อปปี้ <b>Project URL</b> และ <b>anon public key</b> มาวางด้านล่างได้เลยค่ะ
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Project URL *</label>
+            <input type="url" id="spUrlInput" class="form-input" value="${escapeHtml(currentUrl)}" placeholder="เช่น https://xyzcompany.supabase.co" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Anon Public Key *</label>
+            <textarea id="spKeyInput" class="form-input" style="height: 80px; font-family: monospace; font-size: 0.8rem;" placeholder="รหัสยาวๆ ที่ขึ้นต้นด้วย eyJhbGciOiJKV1Qi..." required>${escapeHtml(currentKey)}</textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('supabaseSettingsModal')">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="background: #059669; color: white;">💾 บันทึกและเชื่อมต่อเรียลไทม์</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function handleSaveSupabaseConfig(e) {
+  e.preventDefault();
+  const url = document.getElementById("spUrlInput").value.trim();
+  const key = document.getElementById("spKeyInput").value.trim();
+
+  if (url && key) {
+    CLOUD_CONFIG.supabaseUrl = url;
+    CLOUD_CONFIG.supabaseKey = key;
+    localStorage.setItem("PKT_SUPABASE_URL", url);
+    localStorage.setItem("PKT_SUPABASE_KEY", key);
+
+    closeModal('supabaseSettingsModal');
+    initSupabaseClient();
+    
+    // Auto push initial data if empty
+    const currentData = getSOPData();
+    syncSOPToSupabaseCloud(currentData);
+
+    showToast("✅ เชื่อมต่อ Supabase เรียลไทม์สำเร็จแล้ว!", "success");
+    renderSOPList();
+  }
+}
+
+// Load custom Supabase config from localStorage if stored
+(function checkSavedSupabaseConfig() {
+  const savedUrl = localStorage.getItem("PKT_SUPABASE_URL");
+  const savedKey = localStorage.getItem("PKT_SUPABASE_KEY");
+  if (savedUrl && savedKey) {
+    CLOUD_CONFIG.supabaseUrl = savedUrl;
+    CLOUD_CONFIG.supabaseKey = savedKey;
+    setTimeout(() => {
+      initSupabaseClient();
+    }, 500);
+  }
+})();
+
 function resetToDefaultSOP() {
   if (confirm("⚠️ คุณต้องการรีเซ็ตข้อมูล SOP และหมวดหมู่ย่อยทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) {
-    localStorage.removeItem("PKT_SOP_DATA_V7");
+    localStorage.removeItem("PKT_SOP_DATA_V10");
     localStorage.removeItem("PKT_SUB_CATEGORIES_V1");
     renderSidebarNavigation();
     renderSOPList();

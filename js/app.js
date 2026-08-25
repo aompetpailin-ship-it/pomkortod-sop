@@ -1,6 +1,6 @@
 /**
  * แอปพลิเคชันหลักระบบ SOP ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod)
- * รองรับการดึงข้อมูลและซิงค์คลาวด์เรียลไทม์ (Centralized Cloud Database Sync)
+ * รองรับการบังคับดึงข้อมูลคลาวด์และรีเฟรชหน้าจออัตโนมัติ (Force Cloud Sync V8)
  */
 
 let currentRole = "none";
@@ -13,10 +13,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderSidebarNavigation();
   initEventListeners();
 
-  // ดึงข้อมูลล่าสุดจาก Cloud Database มาแสดงผลให้อัตโนมัติทุกครั้งที่เปิดหน้าเว็บ
+  // ดึงข้อมูลใหม่ล่าสุดจากคลาวด์มาอัปเดตหน้าจอทันทีเมื่อเปิดเว็บ
   if (typeof fetchSOPDataFromCloud === "function") {
-    await fetchSOPDataFromCloud();
-    renderSidebarNavigation();
+    const cloudSops = await fetchSOPDataFromCloud();
+    if (cloudSops) {
+      renderSidebarNavigation();
+    }
   }
   
   // ตรวจสอบสถานะการเข้าสู่ระบบ
@@ -31,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ฟังก์ชันแจ้งเตือน Toast ลอยมุมขวาบน หายไปเองใน 2 วินาที (ไม่ต้องกด Close)
-function showToast(message, type = 'success', duration = 2000) {
+function showToast(message, type = 'success', duration = 2500) {
   let toast = document.getElementById("appToastNotification");
   if (!toast) {
     toast = document.createElement("div");
@@ -49,6 +51,22 @@ function showToast(message, type = 'success', duration = 2000) {
   setTimeout(() => {
     toast.classList.remove("show");
   }, duration);
+}
+
+// ฟังก์ชันบังคับดึงข้อมูลล่าสุดจากคลาวด์ทันทีและอัปเดตหน้าจอ
+async function forceRefreshFromCloud() {
+  showToast("⏳ กำลังเชื่อมต่อคลาวด์ดึงสูตรอาหารล่าสุด...", "info", 1500);
+  if (typeof fetchSOPDataFromCloud === "function") {
+    const cloudData = await fetchSOPDataFromCloud();
+    if (cloudData && cloudData.length > 0) {
+      currentActiveSopId = null;
+      renderSidebarNavigation();
+      renderSOPList();
+      showToast(`✅ อัปเดตสูตรล่าสุดจากคลาวด์สำเร็จ! (${cloudData.length} รายการ)`);
+    } else {
+      showToast("⚠️ ไม่พบข้อมูลสูตรใหม่ หรือคลาวด์กำลังประมวลผล", "info");
+    }
+  }
 }
 
 function renderSidebarNavigation() {
@@ -233,11 +251,17 @@ function renderSOPList() {
         </p>
       </div>
 
-      ${currentRole === 'admin' ? `
-        <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()" style="width: auto; padding: 0.6rem 1.2rem;">
-          ➕ เพิ่ม SOP ใหม่
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="action-btn btn-secondary" onclick="forceRefreshFromCloud()" style="width: auto; padding: 0.6rem 1rem; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981;">
+          🔄 ซิงค์ข้อมูลด่วน
         </button>
-      ` : ''}
+
+        ${currentRole === 'admin' ? `
+          <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()" style="width: auto; padding: 0.6rem 1.2rem;">
+            ➕ เพิ่ม SOP ใหม่
+          </button>
+        ` : ''}
+      </div>
     </div>
   `;
 

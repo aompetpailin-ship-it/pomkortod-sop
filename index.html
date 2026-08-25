@@ -13,9 +13,8 @@
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Firebase Web SDK for Realtime CORS-Free Cloud Sync -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- Supabase Enterprise Cloud Client SDK (PostgreSQL Realtime) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -50,10 +49,10 @@
       <!-- Quick Admin Tools -->
       <div class="quick-tools-box">
         <div class="quick-tools-title">
-          <span>☁️ ระบบคลาวด์และเครื่องมือจัดการ</span>
+          <span>🚀 Supabase Cloud Database</span>
         </div>
         <button class="action-btn btn-primary" onclick="handleManualCloudPull()" style="background: #059669; color: white;">
-          ☁️ ดึงสูตรล่าสุดจากคลาวด์
+          🔄 ซิงค์สูตรจาก Supabase
         </button>
         <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()">
           ➕ เพิ่ม SOP ใหม่
