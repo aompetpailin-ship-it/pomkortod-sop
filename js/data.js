@@ -359,7 +359,7 @@ async function fetchSOPDataFromCloud() {
 
 async function syncSOPToSupabaseCloud(sopList) {
   const client = initSupabaseClient();
-  if (!client || !Array.isArray(sopList)) return;
+  if (!client || !Array.isArray(sopList)) return false;
 
   try {
     const payload = sopList.map(sop => ({
@@ -377,12 +377,20 @@ async function syncSOPToSupabaseCloud(sopList) {
 
     if (error) {
       console.error("Supabase Upsert Error:", error.message);
+      return false;
     } else {
       console.log("⚡ Synced SOP Data to Supabase Cloud successfully!");
+      return true;
     }
   } catch (err) {
     console.error("Supabase Cloud Sync Error:", err);
+    return false;
   }
+}
+
+// Alias สำหรับระบบ CMS
+async function syncSOPDataToCloud(sopList) {
+  return await syncSOPToSupabaseCloud(sopList);
 }
 
 async function syncSubCategoriesToCloud(subCatList) {
