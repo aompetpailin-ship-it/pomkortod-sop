@@ -332,13 +332,34 @@ function removeStepImage(index) {
   renderStepsBuilder();
 }
 
-function handleStepImageUpload(event, index) {
-  const file = event.target.files[0];
+async function handleStepImageUpload(event, index) {
+  let file = event.target.files[0];
   if (!file) return;
 
   currentEditingSteps = syncCurrentStepsFromDOM();
+  showToast("⏳ กำลังประมวลผลและแปลงรูปภาพ...", "info", 2000);
 
-  showToast("⏳ กำลังประมวลผลและแปลงรูปภาพเป็น JPEG...", "info", 1500);
+  // ตรวจสอบว่าเป็นไฟล์ภาพ .HEIC / .HEIF จาก iPhone หรือไม่
+  const fileNameLower = file.name ? file.name.toLowerCase() : "";
+  const isHeic = fileNameLower.endsWith(".heic") || fileNameLower.endsWith(".heif") || (file.type && file.type.toLowerCase().includes("heic"));
+
+  if (isHeic) {
+    if (typeof window.heic2any === "function") {
+      try {
+        showToast("📱 กำลังแปลงรูปภาพ .HEIC จาก iPhone เป็น JPG...", "info", 2500);
+        const convertedBlob = await window.heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.7
+        });
+        file = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      } catch (heicErr) {
+        console.error("HEIC conversion error:", heicErr);
+        showToast("⚠️ ไม่สามารถแปลงไฟล์ .HEIC ได้ กรุณาเลือกไฟล์ JPG หรือ PNG", "error", 4000);
+        return;
+      }
+    }
+  }
 
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -349,7 +370,6 @@ function handleStepImageUpload(event, index) {
         let width = img.width;
         let height = img.height;
 
-        // ปรับความกว้างสูงสุดเป็น 500px บีบอัดคุณภาพ 0.5 ให้น้ำหนักเบาพิเศษ
         const MAX_WIDTH = 500;
         if (width > MAX_WIDTH) {
           height = Math.round((height * MAX_WIDTH) / width);
@@ -379,7 +399,7 @@ function handleStepImageUpload(event, index) {
     };
 
     img.onerror = () => {
-      showToast("⚠️ รูปภาพ .HEIC จาก iPhone ต้องแปลงเป็น JPG ก่อน หรือเปลี่ยนการตั้งค่ากล้องเป็น Most Compatible", "error", 4000);
+      showToast("⚠️ ไม่สามารถโหลดรูปภาพนี้ได้ กรุณาใช้ไฟล์ JPG หรือ PNG", "error", 4000);
     };
 
     img.src = e.target.result;
