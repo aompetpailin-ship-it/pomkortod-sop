@@ -36,13 +36,14 @@ function subscribeToSupabaseRealtime() {
   try {
     supabaseClient
       .channel('public:sop_data')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_data' }, payload => {
-        console.log("🔔 Supabase Realtime Change Received!", payload);
-        fetchSOPDataFromCloud().then(() => {
-          if (typeof renderCurrentView === "function") {
-            renderCurrentView();
-          }
-        });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sop_data' }, async payload => {
+        console.log("🔔 Supabase Realtime Change Received on this device!", payload);
+        const cloudData = await fetchSOPDataFromCloud();
+        if (cloudData) {
+          if (typeof renderSidebarNavigation === "function") renderSidebarNavigation();
+          if (typeof renderSOPList === "function") renderSOPList();
+          if (typeof showToast === "function") showToast("⚡ อัปเดตสูตรอาหารใหม่จากคลาวด์เรียบร้อยแล้ว!", "info", 2000);
+        }
       })
       .subscribe();
   } catch (err) {
@@ -324,7 +325,7 @@ async function fetchSOPDataFromCloud() {
       .order('id', { ascending: true });
 
     if (error) {
-      console.warn("Supabase Fetch Warning (Table might not exist yet):", error.message);
+      console.warn("Supabase Fetch Warning:", error.message);
       return null;
     }
 
@@ -367,3 +368,8 @@ async function syncSOPToSupabaseCloud(sopList) {
     console.error("Supabase Cloud Sync Error:", err);
   }
 }
+
+// Auto init client immediately on load
+setTimeout(() => {
+  initSupabaseClient();
+}, 200);

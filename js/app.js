@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderSidebarNavigation();
   initEventListeners();
 
-  // ดึงข้อมูลใหม่ล่าสุดจากคลาวด์มาอัปเดตหน้าจอทันทีเมื่อเปิดเว็บ
+  // ดึงข้อมูลใหม่ล่าสุดจาก Supabase Cloud มาอัปเดตหน้าจอทันทีเมื่อเปิดเว็บทุกเครื่อง
   if (typeof fetchSOPDataFromCloud === "function") {
     const cloudSops = await fetchSOPDataFromCloud();
     if (cloudSops) {
@@ -26,10 +26,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (currentUser) {
     currentRole = currentUser.role;
     updateNavbarAuthUI(currentUser);
-    renderSOPList();
   } else {
     showLoginModal();
   }
+  
+  renderSidebarNavigation();
+  renderSOPList();
 });
 
 // ฟังก์ชันแจ้งเตือน Toast ลอยมุมขวาบน หายไปเองใน 2 วินาที (ไม่ต้องกด Close)
