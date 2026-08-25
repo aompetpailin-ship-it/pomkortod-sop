@@ -647,9 +647,17 @@ async function handleSaveSOP(event, id) {
   }
 }
 
-async function deleteSOP(id) {
+async function deleteSOP(id, fallbackIdx) {
   if (confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบ SOP นี้ออกจากระบบ?")) {
-    const allSop = getSOPData().filter(s => s.id !== id);
+    let allSop = getSOPData();
+
+    if (id && !id.startsWith('temp-') && id !== 'undefined') {
+      allSop = allSop.filter(s => s && s.id !== id && s.title !== 'undefined');
+    } else if (typeof fallbackIdx === 'number' && fallbackIdx >= 0 && allSop[fallbackIdx]) {
+      allSop.splice(fallbackIdx, 1);
+    } else {
+      allSop = allSop.filter(s => s && s.title && s.title !== 'undefined');
+    }
     
     // ลบออกจาก LocalStorage
     try {
@@ -662,8 +670,11 @@ async function deleteSOP(id) {
     const client = initSupabaseClient();
     if (client) {
       try {
-        await client.from('sop_data').delete().eq('id', id);
-        console.log("🗑️ Deleted SOP from Supabase Cloud DB:", id);
+        if (id && !id.startsWith('temp-') && id !== 'undefined') {
+          await client.from('sop_data').delete().eq('id', id);
+        }
+        await client.from('sop_data').delete().eq('title', 'undefined');
+        await client.from('sop_data').delete().is('title', null);
       } catch (err) {
         console.error("Error deleting from Supabase:", err);
       }

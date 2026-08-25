@@ -279,31 +279,32 @@ function renderSOPList() {
     `;
   } else {
     html += `<div class="sop-grid">`;
-    filtered.forEach(item => {
+    filtered.forEach((item, idx) => {
+      const safeId = item.id || `temp-${idx}`;
       html += `
-        <div class="sop-card" onclick="viewSOPDetail('${item.id}')">
+        <div class="sop-card" onclick="viewSOPDetail('${safeId}', ${idx})">
           <div>
             <div class="sop-card-header">
               <span class="sop-category-tag">${getCategoryBadge(item.category)}</span>
               <div style="display: flex; align-items: center; gap: 0.4rem;">
                 <span style="font-size: 0.75rem; background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: bold;">v${item.version || '1.0'}</span>
                 ${currentRole === 'admin' ? `
-                  <button type="button" onclick="event.stopPropagation(); deleteSOP('${item.id}')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 6px; padding: 0.1rem 0.4rem; font-size: 0.75rem; cursor: pointer;" title="ลบ SOP นี้">🗑️ ลบ</button>
+                  <button type="button" onclick="event.stopPropagation(); deleteSOP('${safeId}', ${idx})" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #dc2626; border-radius: 6px; padding: 0.15rem 0.5rem; font-size: 0.75rem; font-weight: bold; cursor: pointer;" title="ลบ SOP นี้">🗑️ ลบ</button>
                 ` : ''}
               </div>
             </div>
-            <h3 class="sop-card-title">${item.title}</h3>
+            <h3 class="sop-card-title">${item.title || 'คู่มือ SOP'}</h3>
             <p class="sop-card-desc">${item.summary || 'ไม่มีคำอธิบายสรุป'}</p>
           </div>
 
           <div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-              👤 โดย: <strong style="color: var(--text-main);">${item.author || 'Admin'}</strong> (${item.updatedAt})
+              👤 โดย: <strong style="color: var(--text-main);">${item.author || 'Admin'}</strong> (${item.updatedAt || 'ล่าสุด'})
             </div>
             <div class="sop-card-meta">
               <div class="meta-item">⏱️ ${item.cookTime || item.prepTime || '-'}</div>
               <div class="meta-item">📦 ${item.yield || '1 เสิร์ฟ'}</div>
-              <div class="meta-item" style="margin-left: auto; color: #fbbf24; font-weight: bold;">อ่านต่อ ➔</div>
+              <div class="meta-item" style="margin-left: auto; color: #d97706; font-weight: bold;">อ่านต่อ ➔</div>
             </div>
           </div>
         </div>
@@ -316,16 +317,19 @@ function renderSOPList() {
   updateUIPermissions();
 }
 
-function viewSOPDetail(sopId) {
+function viewSOPDetail(sopId, fallbackIdx) {
   currentActiveSopId = sopId;
-  renderSOPDetail(sopId);
+  renderSOPDetail(sopId, fallbackIdx);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function renderSOPDetail(sopId) {
+function renderSOPDetail(sopId, fallbackIdx) {
   const container = document.getElementById("sopContentArea");
   const allSop = getSOPData();
-  const sop = allSop.find(item => item.id === sopId);
+  let sop = allSop.find(item => item && item.id === sopId);
+  if (!sop && typeof fallbackIdx === 'number' && allSop[fallbackIdx]) {
+    sop = allSop[fallbackIdx];
+  }
 
   if (!sop) {
     currentActiveSopId = null;
