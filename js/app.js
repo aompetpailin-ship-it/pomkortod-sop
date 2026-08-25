@@ -285,7 +285,12 @@ function renderSOPList() {
           <div>
             <div class="sop-card-header">
               <span class="sop-category-tag">${getCategoryBadge(item.category)}</span>
-              <span style="font-size: 0.75rem; background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: bold;">v${item.version || '1.0'}</span>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 0.75rem; background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: bold;">v${item.version || '1.0'}</span>
+                ${currentRole === 'admin' ? `
+                  <button type="button" onclick="event.stopPropagation(); deleteSOP('${item.id}')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 6px; padding: 0.1rem 0.4rem; font-size: 0.75rem; cursor: pointer;" title="ลบ SOP นี้">🗑️ ลบ</button>
+                ` : ''}
+              </div>
             </div>
             <h3 class="sop-card-title">${item.title}</h3>
             <p class="sop-card-desc">${item.summary || 'ไม่มีคำอธิบายสรุป'}</p>

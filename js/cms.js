@@ -627,14 +627,35 @@ async function handleSaveSOP(event, id) {
   }
 }
 
-function deleteSOP(id) {
+async function deleteSOP(id) {
   if (confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบ SOP นี้ออกจากระบบ?")) {
     const allSop = getSOPData().filter(s => s.id !== id);
-    saveSOPData(allSop);
-    closeModal("cmsModalOverlay");
+    
+    // ลบออกจาก LocalStorage
+    try {
+      localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(allSop));
+    } catch (e) {
+      console.warn("LocalStorage quota error:", e);
+    }
+
+    // ลบออกจาก Supabase Cloud DB ถาวร
+    const client = initSupabaseClient();
+    if (client) {
+      try {
+        await client.from('sop_data').delete().eq('id', id);
+        console.log("🗑️ Deleted SOP from Supabase Cloud DB:", id);
+      } catch (err) {
+        console.error("Error deleting from Supabase:", err);
+      }
+    }
+
+    const modal = document.getElementById("cmsModalOverlay");
+    if (modal) modal.remove();
+
+    if (typeof backToGrid === "function") backToGrid();
     renderSidebarNavigation();
     renderSOPList();
-    showToast("🗑️ ลบข้อมูลเรียบร้อยแล้ว", "error");
+    showToast("🗑️ ลบข้อมูล SOP ออกจากระบบและคลาวด์เรียบร้อยแล้ว", "success");
   }
 }
 
