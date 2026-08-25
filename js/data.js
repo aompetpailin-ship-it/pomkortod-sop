@@ -299,12 +299,24 @@ function sanitizeImageUrlsInSopList(sopList) {
   return sopList;
 }
 
+function filterInvalidSOPs(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(item => {
+    if (!item) return false;
+    if (!item.id || item.id === 'undefined' || item.id === 'null') return false;
+    if (!item.title || item.title === 'undefined' || item.title === 'null') return false;
+    if (item.category === 'config') return false;
+    return true;
+  });
+}
+
 function getSOPData() {
   const local = localStorage.getItem("PKT_SOP_DATA_V10");
   if (local) {
     try {
       const parsed = JSON.parse(local);
-      return sanitizeImageUrlsInSopList(parsed);
+      const cleaned = filterInvalidSOPs(parsed);
+      return sanitizeImageUrlsInSopList(cleaned);
     } catch (e) {
       console.error("Error parsing SOP data", e);
     }
@@ -315,13 +327,14 @@ function getSOPData() {
 }
 
 function saveSOPData(data) {
+  const cleanedData = filterInvalidSOPs(data);
   try {
-    localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(data));
+    localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(cleanedData));
   } catch (e) {
     console.warn("LocalStorage quota exceeded (5MB limit). Saving directly to Supabase Cloud instead.", e);
   }
   // ซิงค์ไปยัง Supabase Cloud เสมอ
-  syncSOPToSupabaseCloud(data);
+  syncSOPToSupabaseCloud(cleanedData);
 }
 
 // =========================================================================
@@ -346,10 +359,20 @@ async function fetchSOPDataFromCloud() {
     }
 
     if (data && data.length > 0) {
-      const parsedSopList = data.map(item => typeof item.sop_content === 'object' ? item.sop_content : JSON.parse(item.sop_content));
-      localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(parsedSopList));
-      console.log("🚀 Fetched SOP Data from Supabase Cloud successfully!", parsedSopList.length, "items");
-      return parsedSopList;
+      const parsedSopList = data
+        .filter(item => item.id !== '_sub_categories_config')
+        .map(item => {
+          let sopObj = typeof item.sop_content === 'object' ? item.sop_content : JSON.parse(item.sop_content);
+          if (sopObj && (!sopObj.title || sopObj.title === 'undefined')) {
+            sopObj.title = item.title;
+          }
+          return sopObj;
+        });
+
+      const cleanedSopList = filterInvalidSOPs(parsedSopList);
+      localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(cleanedSopList));
+      console.log("🚀 Fetched SOP Data from Supabase Cloud successfully!", cleanedSopList.length, "items");
+      return cleanedSopList;
     }
   } catch (err) {
     console.error("Supabase Cloud Fetch Error:", err);
