@@ -92,7 +92,7 @@ function showLoginModal() {
         <form id="loginForm" onsubmit="handleUserLogin(event)">
           <div class="form-group">
             <label class="form-label">ชื่อผู้ใช้งาน (Username) หรือ PIN</label>
-            <input type="text" id="loginUsername" class="form-input" required placeholder="เช่น admin, chef, service หรือ PIN" style="font-size: 1rem; padding: 0.8rem;" />
+            <input type="text" id="loginUsername" class="form-input" required placeholder="กรอกชื่อผู้ใช้งาน หรือ PIN" style="font-size: 1rem; padding: 0.8rem;" />
           </div>
 
           <div class="form-group">
@@ -100,21 +100,12 @@ function showLoginModal() {
             <input type="password" id="loginPassword" class="form-input" required placeholder="กรอกรหัสผ่านเพื่อเข้าใช้งาน" style="font-size: 1rem; padding: 0.8rem;" />
           </div>
 
-          <div id="loginErrorMessage" style="color: #ef4444; font-size: 0.85rem; margin-bottom: 1rem; display: none; text-align: center; font-weight: bold;"></div>
+          <div id="loginErrorMessage" style="color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; display: none; text-align: center; font-weight: bold;"></div>
 
           <button type="submit" class="action-btn btn-primary" style="padding: 0.9rem; font-size: 1rem; border-radius: 10px;">
             🔑 ยืนยันเข้าสู่ระบบ
           </button>
         </form>
-
-        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: bold;">💡 รหัสผ่านทดสอบสำหรับพนักงาน (Demo Accounts):</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr; gap: 0.3rem; background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 8px;">
-            <div>👑 <strong>Admin/Owner:</strong> admin / <code>pktadmin1234</code></div>
-            <div>🍳 <strong>เชฟ/พนักงานครัว:</strong> chef / <code>kitchen1234</code></div>
-            <div>🛎️ <strong>พนักงานหน้าร้าน:</strong> service / <code>front1234</code></div>
-          </div>
-        </div>
 
       </div>
     </div>
