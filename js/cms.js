@@ -1,6 +1,7 @@
 /**
- * ระบบจัดการและแก้ไขข้อมูล SOP (Admin CMS Module)
- * ปรับระบบบีบอัดภาพถ่ายให้อัลตร้าไลท์เวท เพื่อการบันทึกคลาวด์ที่รวดเร็วและไม่ติดโควต้า
+ * ✏️ ระบบจัดการและแก้ไขข้อมูล SOP (Admin CMS Module V30)
+ * รองรับ 7 หมวดหมู่แฟรนไชส์, การแนบวิดีโอสอนทำอาหาร (YouTube/Drive/MP4), มุมกล้อง POV/Top-down,
+ * ตาราง Pass vs Fail, การแก้ปัญหาเฉพาะหน้า (Troubleshooting) และการบีบอัดภาพ WebP คมชัดสูงขึ้น Firebase Cloud
  */
 
 let currentEditingSteps = [];
@@ -23,24 +24,28 @@ function openEditSOPModal(sopId = null) {
 
     let item = {
       id: "sop-" + Date.now(),
+      docCode: "SOP-OPS-" + String(allSop.length + 1).padStart(3, "0"),
       title: "",
-      category: "prep",
+      category: currentCategory && currentCategory !== "all" ? currentCategory : "stage-2-prep",
       subCategory: subCategories[0] ? subCategories[0].id : "thigh",
       version: "1.0",
       targetRole: ["kitchen", "front", "admin"],
-      updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      updatedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
       author: currentAuthorName,
-      changeNotes: "กำหนดสูตร/ขั้นตอนครั้งแรก",
+      changeNotes: "กำหนดสูตร/ขั้นตอนมาตรฐาน",
       versionHistory: [],
       prepTime: "",
       cookTime: "",
       yield: "",
+      sellingPrice: 0,
       summary: "",
       tags: [],
       specifications: [],
+      qualityChecks: [],
+      troubleshooting: [],
       ingredients: [],
       steps: [
-        { stepNumber: 1, title: "", description: "", imageUrl: "", timerSeconds: 0, tip: "" }
+        { stepNumber: 1, title: "", description: "", imageUrl: "", videoUrl: "", cameraAngle: "POV (มุมสายตาตัวเอง)", timerSeconds: 0, tip: "" }
       ]
     };
 
@@ -51,19 +56,22 @@ function openEditSOPModal(sopId = null) {
       }
     }
 
+    item.category = normalizeCategoryStage(item.category);
     if (!Array.isArray(item.targetRole)) item.targetRole = ["kitchen", "front", "admin"];
     if (!Array.isArray(item.versionHistory)) item.versionHistory = [];
     if (!Array.isArray(item.ingredients)) item.ingredients = [];
-    if (!Array.isArray(item.steps)) item.steps = [];
-    if (!item.steps.length) item.steps = [{ stepNumber: 1, title: "", description: "", imageUrl: "", timerSeconds: 0, tip: "" }];
+    if (!Array.isArray(item.qualityChecks)) item.qualityChecks = [];
+    if (!Array.isArray(item.troubleshooting)) item.troubleshooting = [];
+    if (!Array.isArray(item.steps) || !item.steps.length) {
+      item.steps = [{ stepNumber: 1, title: "", description: "", imageUrl: "", videoUrl: "", cameraAngle: "POV (มุมสายตาตัวเอง)", timerSeconds: 0, tip: "" }];
+    }
 
     currentEditingSteps = item.steps;
-
     const isEdit = !!sopId;
 
     let suggestedVersion = item.version || "1.0";
     if (isEdit) {
-      const vParts = String(suggestedVersion).split('.');
+      const vParts = String(suggestedVersion).split(".");
       if (vParts.length === 2 && !isNaN(parseInt(vParts[1]))) {
         suggestedVersion = `${vParts[0]}.${parseInt(vParts[1]) + 1}`;
       } else {
@@ -73,104 +81,134 @@ function openEditSOPModal(sopId = null) {
 
     const modalHtml = `
       <div class="modal-overlay" id="cmsModalOverlay">
-        <div class="modal-card" style="max-width: 850px;">
+        <div class="modal-card" style="max-width: 900px;">
           <div class="modal-header">
             <div>
-              <h3 style="font-size: 1.25rem; color: #fbbf24;">${isEdit ? "✏️ แก้ไขคู่มือ SOP & สูตรอาหาร" : "➕ เพิ่มคู่มือ SOP ใหม่"}</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">ระบบจะทำการบันทึกและซิงค์ข้อมูลลงคลาวด์อัตโนมัติ</span>
+              <h3 style="font-size: 1.3rem; color: #b45309;">${isEdit ? "✏️ แก้ไขคู่มือ SOP & มาตรฐานแฟรนไชส์" : "➕ เพิ่มคู่มือ SOP ใหม่"}</h3>
+              <span style="font-size: 0.82rem; color: var(--text-muted);">รองรับการแนบรูปภาพความละเอียดสูง คลิปวิดีโอสั้น และซิงค์ขึ้น Cloud อัตโนมัติ</span>
             </div>
-            <button type="button" onclick="closeModal('cmsModalOverlay')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <button type="button" onclick="closeModal('cmsModalOverlay')" style="background:none; border:none; color:var(--text-main); font-size:1.6rem; cursor:pointer;">&times;</button>
           </div>
           <form id="sopEditorForm" onsubmit="handleSaveSOP(event, '${item.id}')">
             
-            <div class="form-group">
-              <label class="form-label">ชื่อหัวข้อ SOP *</label>
-              <input type="text" id="editTitle" class="form-input" value="${escapeHtml(item.title)}" placeholder="เช่น SOP การเตรียมสะโพกไก่ดิบ หรือ SOP การทอดปีกไก่" />
+            <div style="display: grid; grid-template-columns: 180px 1fr; gap: 0.85rem;">
+              <div class="form-group">
+                <label class="form-label">รหัสเอกสาร (Doc Code)</label>
+                <input type="text" id="editDocCode" class="form-input" value="${escapeHtml(item.docCode || 'SOP-OPS-001')}" placeholder="เช่น SOP-OPS-003" style="font-weight: 800;" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ชื่อหัวข้อ SOP *</label>
+                <input type="text" id="editTitle" class="form-input" value="${escapeHtml(item.title)}" placeholder="เช่น SOP กระบวนการคลุกแป้งและทอดไก่" required />
+              </div>
             </div>
 
             <!-- Section: Audit Trail & Versioning Fields -->
-            <div style="background: rgba(217, 119, 6, 0.1); border: 1px solid rgba(217, 119, 6, 0.3); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
-              <div style="font-size: 0.85rem; font-weight: 700; color: #fbbf24; margin-bottom: 0.6rem;">📜 ข้อมูลเวอร์ชันและการติดตามผู้ปรับปรุง (Recipe Version & Audit Log)</div>
-              <div style="display: grid; grid-template-columns: 140px 1fr 1fr; gap: 0.75rem;">
+            <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+              <div style="font-size: 0.85rem; font-weight: 800; color: #b45309; margin-bottom: 0.6rem;">📜 ข้อมูลเวอร์ชันและการติดตามผู้ปรับปรุง (Recipe Version & Audit Log)</div>
+              <div style="display: grid; grid-template-columns: 130px 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin:0;">
-                  <label class="form-label">เลขเวอร์ชัน (Version)</label>
-                  <input type="text" id="editVersion" class="form-input" value="${escapeHtml(suggestedVersion)}" style="text-align: center; font-weight: bold; color: #fbbf24;" />
+                  <label class="form-label">เลขเวอร์ชัน</label>
+                  <input type="text" id="editVersion" class="form-input" value="${escapeHtml(suggestedVersion)}" style="text-align: center; font-weight: 800; color: #b45309;" />
                 </div>
                 <div class="form-group" style="margin:0;">
                   <label class="form-label">ผู้ปรับปรุงข้อมูล (Author)</label>
                   <input type="text" id="editAuthor" class="form-input" value="${escapeHtml(currentAuthorName)}" />
                 </div>
                 <div class="form-group" style="margin:0;">
-                  <label class="form-label">หมายเหตุการแก้ไข (Reason/Notes)</label>
-                  <input type="text" id="editChangeNotes" class="form-input" placeholder="เช่น ปรับเวลาหมัก, เพิ่มผงหมัก" value="${escapeHtml(isEdit ? 'ปรับปรุงขั้นตอน/สัดส่วนสูตร' : 'กำหนดสูตรครั้งแรก')}" />
+                  <label class="form-label">หมายเหตุการแก้ไข</label>
+                  <input type="text" id="editChangeNotes" class="form-input" value="${escapeHtml(isEdit ? 'ปรับปรุงขั้นตอน/สัดส่วนสูตร' : 'กำหนดสูตรมาตรฐาน')}" />
                 </div>
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="form-group">
-                <label class="form-label">หมวดหมู่หลัก (Workflow Stage)</label>
+                <label class="form-label">หมวดหมู่หลัก 7 ไทม์ไลน์ (Workflow Stage)</label>
                 <select id="editCategory" class="form-select" onchange="updateSubCategoryDropdownOptions(this.value)">
-                  <option value="prep" ${item.category === 'prep' ? 'selected' : ''}>🥩 1. การเตรียมวัตถุดิบ (Prep)</option>
-                  <option value="cooking" ${item.category === 'cooking' ? 'selected' : ''}>🍳 2. การปรุงและการทอด (Cooking & Frying)</option>
-                  <option value="serving-packaging" ${item.category === 'serving-packaging' ? 'selected' : ''}>📦 3. การเสิร์ฟและการแพ็ก (Serving & Packaging)</option>
-                  <option value="hygiene" ${item.category === 'hygiene' ? 'selected' : ''}>🧹 4. สุขอนามัยและความปลอดภัย (Hygiene)</option>
+                  <option value="stage-1-opening" ${item.category === 'stage-1-opening' ? 'selected' : ''}>🌅 หมวดที่ 1: ขั้นตอนการเปิดร้าน (Opening)</option>
+                  <option value="stage-2-prep" ${item.category === 'stage-2-prep' ? 'selected' : ''}>🥩 หมวดที่ 2: การรับและเตรียมวัตถุดิบ (Raw Material & Prep)</option>
+                  <option value="stage-3-frying" ${item.category === 'stage-3-frying' ? 'selected' : ''}>🔥 หมวดที่ 3: กระบวนการคลุกแป้งและทอด (Coating & Frying)</option>
+                  <option value="stage-4-packing" ${item.category === 'stage-4-packing' ? 'selected' : ''}>📦 หมวดที่ 4: การจัดเก็บ คลุกซอส และแพ็กเกจจิ้ง (Holding & Packing)</option>
+                  <option value="stage-5-delivery" ${item.category === 'stage-5-delivery' ? 'selected' : ''}>🛵 หมวดที่ 5: การบริการหน้าร้านและเดลิเวอรี (FOH & Delivery)</option>
+                  <option value="stage-6-oil" ${item.category === 'stage-6-oil' ? 'selected' : ''}>🛢️ หมวดที่ 6: การจัดการน้ำมันและอุปกรณ์ (Oil & Equipment Care)</option>
+                  <option value="stage-7-closing" ${item.category === 'stage-7-closing' ? 'selected' : ''}>🌙 หมวดที่ 7: ขั้นตอนการปิดร้าน (Closing Procedures)</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label">หมวดหมู่ย่อย / ชื่อวัตถุดิบหรือกระบวนการ</label>
+                <label class="form-label">หมวดหมู่ย่อย / สเตชันย่อย</label>
                 <div style="display: flex; gap: 0.4rem;">
                   <select id="editSubCategory" class="form-select"></select>
                   <button type="button" class="action-btn btn-secondary" onclick="openManageSubCategoriesModal()" style="width: auto; padding: 0.4rem 0.8rem; margin: 0; font-size: 0.8rem; white-space: nowrap;">
-                    ⚙️ เพิ่มวัตถุดิบใหม่
+                    ⚙️ เพิ่มหมวดย่อย
                   </button>
                 </div>
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem;">
               <div class="form-group">
-                <label class="form-label">เวลาเตรียม</label>
+                <label class="form-label">เวลาเตรียม (Prep Time)</label>
                 <input type="text" id="editPrepTime" class="form-input" value="${escapeHtml(item.prepTime)}" placeholder="เช่น 15 นาที" />
               </div>
               <div class="form-group">
-                <label class="form-label">เวลาทอด/ปรุง</label>
-                <input type="text" id="editCookTime" class="form-input" value="${escapeHtml(item.cookTime)}" placeholder="เช่น 8.5 นาที" />
+                <label class="form-label">เวลาทอด/ปรุง (Cook Time)</label>
+                <input type="text" id="editCookTime" class="form-input" value="${escapeHtml(item.cookTime)}" placeholder="เช่น 11:30 - 12:00 นาที" />
               </div>
               <div class="form-group">
                 <label class="form-label">ปริมาณได้ (Yield)</label>
-                <input type="text" id="editYield" class="form-input" value="${escapeHtml(item.yield)}" placeholder="เช่น 10 ชิ้น" />
+                <input type="text" id="editYield" class="form-input" value="${escapeHtml(item.yield)}" placeholder="เช่น 12 ชิ้น" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">มูลค่าขาย/Batch (คำนวณ GP)</label>
+                <input type="number" id="editSellingPrice" class="form-input" value="${item.sellingPrice || 0}" placeholder="เช่น 450" />
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">คำอธิบายสรุปภาพรวม (Summary)</label>
-              <textarea id="editSummary" class="form-textarea" rows="2" placeholder="สรุปภาพรวมของขั้นตอน SOP นี้">${escapeHtml(item.summary)}</textarea>
+              <textarea id="editSummary" class="form-textarea" rows="2" placeholder="สรุปเป้าหมายและจุดสำคัญของ SOP นี้">${escapeHtml(item.summary)}</textarea>
             </div>
 
             <div class="form-group">
               <label class="form-label">สิทธิ์พนักงานที่สามารถมองเห็นได้ (Target Roles)</label>
-              <div style="display: flex; gap: 1rem; margin-top: 0.3rem;">
-                <label><input type="checkbox" id="roleKitchen" ${item.targetRole.includes('kitchen') ? 'checked' : ''} /> 🍳 ฝ่ายครัว (Kitchen)</label>
-                <label><input type="checkbox" id="roleFront" ${item.targetRole.includes('front') ? 'checked' : ''} /> 🛎️ ฝ่ายเสิร์ฟ/หน้าร้าน (Front)</label>
-                <label><input type="checkbox" id="roleAdmin" ${item.targetRole.includes('admin') ? 'checked' : ''} /> 👑 Admin/Manager</label>
+              <div style="display: flex; gap: 1.25rem; margin-top: 0.3rem; flex-wrap: wrap;">
+                <label><input type="checkbox" id="roleKitchen" ${item.targetRole.includes('kitchen') ? 'checked' : ''} /> 🍳 ฝ่ายครัว & สเตชันทอด (Kitchen)</label>
+                <label><input type="checkbox" id="roleFront" ${item.targetRole.includes('front') ? 'checked' : ''} /> 🛎️ ฝ่ายหน้าร้าน & แพ็กเดลิเวอรี (Front)</label>
+                <label><input type="checkbox" id="roleAdmin" ${item.targetRole.includes('admin') ? 'checked' : ''} /> 👑 ผู้บริหาร / ผู้จัดการ (Admin)</label>
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">รายการวัตถุดิบ (รูปแบบ: ชื่อ, ปริมาณ, หน่วย - บรรทัดละ 1 รายการ)</label>
-              <textarea id="editIngredientsRaw" class="form-textarea" rows="3" placeholder="สะโพกไก่สด, 1.5, kg&#10;ผงหมักผมขอทอด, 45, g">${formatIngredientsForTextarea(item.ingredients)}</textarea>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">🥗 รายการวัตถุดิบ (รูปแบบ: ชื่อ, ปริมาณ, หน่วย - บรรทัดละ 1 รายการ)</label>
+                <textarea id="editIngredientsRaw" class="form-textarea" rows="3" placeholder="สะโพกไก่สดตัดแต่ง (130-150g/ชิ้น), 1500, g&#10;ผงหมักสูตรเข้มข้น ผมขอทอด, 45, g">${formatIngredientsForTextarea(item.ingredients)}</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">⚙️ ค่ามาตรฐานจุดวิกฤต (รูปแบบ: หัวข้อ : ค่ามาตรฐาน - บรรทัดละ 1 ข้อ)</label>
+                <textarea id="editSpecsRaw" class="form-textarea" rows="3" placeholder="อุณหภูมิน้ำมัน : 165°C&#10;อุณหภูมิแกนกลาง : ≥ 74°C">${formatSpecsForTextarea(item.specifications)}</textarea>
+              </div>
             </div>
 
-            <!-- Section: Interactive Step Builder with Image Attachment -->
-            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1.5rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">✅ เกณฑ์ผ่าน vs ไม่ผ่าน (รูปแบบ: หัวข้อ | ผ่าน | ไม่ผ่าน - บรรทัดละ 1 ข้อ)</label>
+                <textarea id="editQualityRaw" class="form-textarea" rows="3" placeholder="สีผิวไก่ | เหลืองทองสม่ำเสมอ | สีน้ำตาลไหม้หรือด่างขาว">${formatQualityChecksForTextarea(item.qualityChecks)}</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">🛠️ การแก้ปัญหาหน้างาน (รูปแบบ: ปัญหา | วิธีแก้ไข - บรรทัดละ 1 ข้อ)</label>
+                <textarea id="editTroubleRaw" class="form-textarea" rows="3" placeholder="แป้งนิ่มอมน้ำมัน | เช็กว่าใส่ไก่เกิน 12 ชิ้นหรือน้ำมันยังไม่ถึง 165°C">${formatTroubleshootingForTextarea(item.troubleshooting)}</textarea>
+              </div>
+            </div>
+
+            <!-- Section: Interactive Step Builder with Image & Video Attachment -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div>
-                  <h4 style="font-size: 1.1rem; color: #fbbf24;">🖼️ จัดการขั้นตอนและรูปภาพประกอบ (Step Builder)</h4>
-                  <span style="font-size: 0.75rem; color: var(--text-muted);">รองรับรูปภาพ JPG, PNG และภาพถ่าย iPhone (แปลงบีบอัดอัตโนมัติ)</span>
+                  <h4 style="font-size: 1.1rem; color: #b45309; font-weight: 800;">🖼️ จัดการขั้นตอน รูปภาพ และวิดีโอสั้น (Step & Media Builder)</h4>
+                  <span style="font-size: 0.78rem; color: var(--text-muted);">รองรับไฟล์ภาพ JPG, PNG, ภาพถ่าย iPhone (.HEIC) และลิงก์วิดีโอ YouTube / Google Drive / MP4</span>
                 </div>
-                <button type="button" class="action-btn btn-secondary" onclick="addNewStepRow()" style="width: auto; padding: 0.4rem 0.8rem;">
+                <button type="button" class="action-btn btn-secondary" onclick="addNewStepRow()" style="width: auto; padding: 0.45rem 0.95rem;">
                   ➕ เพิ่มขั้นตอนใหม่
                 </button>
               </div>
@@ -178,20 +216,20 @@ function openEditSOPModal(sopId = null) {
               <div id="stepsBuilderList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
               <div>
                 ${isEdit ? `
                   <button type="button" class="action-btn btn-secondary" onclick="openVersionHistoryModal('${item.id}')" style="width:auto; display:inline-flex; margin-right:0.5rem;">
                     📜 ประวัติเวอร์ชัน (${item.versionHistory ? item.versionHistory.length : 0})
                   </button>
                   <button type="button" class="action-btn" style="background:#dc2626; color:white; width:auto; display:inline-flex;" onclick="deleteSOP('${item.id}')">
-                    🗑️ ลบ
+                    🗑️ ลบคู่มือนี้
                   </button>
                 ` : ''}
               </div>
-              <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="action-btn btn-secondary" onclick="closeModal('cmsModalOverlay')">ยกเลิก</button>
-                <button type="submit" class="action-btn btn-primary" style="width:auto;">💾 บันทึก SOP ลงคลาวด์</button>
+              <div style="display: flex; gap: 0.6rem;">
+                <button type="button" class="action-btn btn-secondary" onclick="closeModal('cmsModalOverlay')" style="width:auto;">ยกเลิก</button>
+                <button type="submit" class="action-btn btn-primary" style="width:auto;">💾 บันทึก SOP และซิงค์ขึ้น Cloud</button>
               </div>
             </div>
           </form>
@@ -215,11 +253,12 @@ function updateSubCategoryDropdownOptions(stage, selectedSubId = null) {
   const dropdown = document.getElementById("editSubCategory");
   if (!dropdown) return;
 
-  const allSubs = getSubCategoriesData().filter(s => s.stage === stage);
+  const normStage = normalizeCategoryStage(stage);
+  const allSubs = getSubCategoriesData().filter(s => normalizeCategoryStage(s.stage) === normStage);
   let html = "";
   allSubs.forEach(s => {
-    const isSel = (selectedSubId && selectedSubId === s.id) ? "selected" : "";
-    html += `<option value="${s.id}" ${isSel}>${s.label}</option>`;
+    const isSel = selectedSubId && selectedSubId === s.id ? "selected" : "";
+    html += `<option value="${s.id}" ${isSel}>${escapeHtml(s.label)}</option>`;
   });
 
   if (!html) {
@@ -235,46 +274,50 @@ function renderStepsBuilder() {
 
   let html = "";
   currentEditingSteps.forEach((step, index) => {
+    const angle = step.cameraAngle || "POV (มุมสายตาตัวเอง)";
     html += `
-      <div class="step-builder-row" data-index="${index}" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; position: relative;">
+      <div class="step-builder-row" data-index="${index}" style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem; position: relative;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <span style="font-weight: 700; color: var(--primary); font-size: 1rem;">ขั้นตอนที่ ${index + 1}</span>
+          <span style="font-weight: 800; color: #b45309; font-size: 1rem;">ขั้นตอนที่ ${index + 1}</span>
           ${currentEditingSteps.length > 1 ? `
-            <button type="button" onclick="removeStepRow(${index})" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer;">ลบขั้นตอนนี้ 🗑️</button>
+            <button type="button" onclick="removeStepRow(${index})" style="background: none; border: none; color: #dc2626; font-weight: 800; cursor: pointer;">ลบขั้นตอนนี้ 🗑️</button>
           ` : ''}
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 140px; gap: 0.75rem; margin-bottom: 0.75rem;">
-          <input type="text" class="form-input step-title-input" placeholder="หัวข้อขั้นตอน เช่น การหมักไก่" value="${escapeHtml(step.title || '')}" />
-          <input type="number" class="form-input step-timer-input" placeholder="จับเวลา (วินาที)" value="${step.timerSeconds || ''}" />
+        <div style="display: grid; grid-template-columns: 1fr 210px 130px; gap: 0.65rem; margin-bottom: 0.65rem;">
+          <input type="text" class="form-input step-title-input" placeholder="หัวข้อขั้นตอน เช่น การคลุกแป้งรอบที่ 2 (Fold & Roll)" value="${escapeHtml(step.title || '')}" style="background:#fff;" />
+          <select class="form-select step-angle-input" style="background:#fff; font-size:0.85rem;">
+            <option value="POV (มุมสายตาตัวเอง)" ${angle.includes('POV') ? 'selected' : ''}>👁️ มุมกล้อง: POV (สายตาคนทำ)</option>
+            <option value="Top-down 90° (มุมบน)" ${angle.includes('Top-down') ? 'selected' : ''}>📐 มุมกล้อง: Top-down 90°</option>
+            <option value="Side-Angle / Close-up" ${angle.includes('Side-Angle') ? 'selected' : ''}>🔍 มุมกล้อง: Side-Angle ระยะใกล้</option>
+          </select>
+          <input type="number" class="form-input step-timer-input" placeholder="จับเวลา (วินาที)" value="${step.timerSeconds || ''}" style="background:#fff;" />
         </div>
 
-        <div class="form-group" style="margin-bottom: 0.75rem;">
-          <textarea class="form-textarea step-desc-input" rows="2" placeholder="รายละเอียดวิธีการปฏิบัติงานในขั้นตอนนี้...">${escapeHtml(step.description || '')}</textarea>
+        <div class="form-group" style="margin-bottom: 0.65rem;">
+          <textarea class="form-textarea step-desc-input" rows="2" placeholder="รายละเอียดวิธีการปฏิบัติงานแบบระบุตัวเลขชัดเจน..." style="background:#fff;">${escapeHtml(step.description || '')}</textarea>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-          <input type="text" class="form-input step-tip-input" placeholder="💡 ข้อควรระวัง / Tip (ถ้ามี)" value="${escapeHtml(step.tip || '')}" />
-          
-          <div>
-            <div style="display: flex; gap: 0.4rem;">
-              <input type="text" class="form-input step-img-input" id="stepImgUrl_${index}" placeholder="URL ภาพ หรืออัปโหลดจากเครื่อง ➔" value="${escapeHtml(step.imageUrl || '')}" style="font-size: 0.8rem;" />
-              <label class="action-btn btn-secondary" style="width: auto; padding: 0.4rem 0.6rem; cursor: pointer; white-space: nowrap; margin: 0; font-size: 0.8rem;">
-                📁 เลือกภาพ
-                <input type="file" accept="image/*,.heic,.heif" style="display: none;" onchange="handleStepImageUpload(event, ${index})" />
-              </label>
-            </div>
-          </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
+          <input type="text" class="form-input step-tip-input" placeholder="💡 จุดสังเกต / ข้อห้าม (Do's & Don'ts)" value="${escapeHtml(step.tip || '')}" style="background:#fff;" />
+          <input type="text" class="form-input step-video-input" placeholder="🎬 ลิงก์วิดีโอสั้น YouTube / Google Drive / MP4 (ถ้ามี)" value="${escapeHtml(step.videoUrl || '')}" style="background:#fff; font-size:0.85rem;" />
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="text" class="form-input step-img-input" id="stepImgUrl_${index}" placeholder="URL รูปภาพ หรือกดปุ่มอัปโหลดจากมือถือ/คอมพิวเตอร์ ➔" value="${escapeHtml(step.imageUrl || '')}" style="font-size: 0.82rem; background:#fff;" />
+          <label class="action-btn btn-secondary" style="width: auto; padding: 0.5rem 0.9rem; cursor: pointer; white-space: nowrap; margin: 0; font-size: 0.82rem; background:#fff;">
+            📸 อัปโหลดรูปภาพ
+            <input type="file" accept="image/*,.heic,.heif" style="display: none;" onchange="handleStepImageUpload(event, ${index})" />
+          </label>
         </div>
 
         ${step.imageUrl ? `
-          <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 8px;">
-            <img src="${step.imageUrl}" alt="Preview" style="max-height: 70px; max-width: 120px; border-radius: 6px; object-fit: cover;" />
-            <span style="font-size: 0.8rem; color: #10b981;">✓ มีรูปภาพประกอบขั้นตอนนี้แล้ว</span>
-            <button type="button" onclick="removeStepImage(${index})" style="margin-left: auto; background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem;">ลบรูปภาพ</button>
+          <div style="margin-top: 0.6rem; display: flex; align-items: center; gap: 0.75rem; background: #ffffff; border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 10px;">
+            <img src="${step.imageUrl}" alt="Preview" style="height: 64px; width: 110px; border-radius: 6px; object-fit: cover;" />
+            <span style="font-size: 0.82rem; color: #059669; font-weight: 700;">✓ แนบรูปภาพประกอบขั้นตอนนี้แล้ว</span>
+            <button type="button" onclick="removeStepImage(${index})" style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.82rem; font-weight: 700;">ลบรูปภาพ</button>
           </div>
         ` : ''}
-
       </div>
     `;
   });
@@ -287,16 +330,20 @@ function syncCurrentStepsFromDOM() {
   const result = [];
   stepRows.forEach((row, index) => {
     const titleInput = row.querySelector(".step-title-input");
+    const angleInput = row.querySelector(".step-angle-input");
     const timerInput = row.querySelector(".step-timer-input");
     const descInput = row.querySelector(".step-desc-input");
     const tipInput = row.querySelector(".step-tip-input");
+    const videoInput = row.querySelector(".step-video-input");
     const imgInput = row.querySelector(".step-img-input");
 
     result.push({
       stepNumber: index + 1,
       title: titleInput ? titleInput.value.trim() : `ขั้นตอนที่ ${index + 1}`,
+      cameraAngle: angleInput ? angleInput.value : "POV (มุมสายตาตัวเอง)",
       description: descInput ? descInput.value.trim() : "",
       imageUrl: imgInput ? imgInput.value.trim() : "",
+      videoUrl: videoInput ? videoInput.value.trim() : "",
       timerSeconds: timerInput ? parseInt(timerInput.value) || 0 : 0,
       tip: tipInput ? tipInput.value.trim() : ""
     });
@@ -309,8 +356,10 @@ function addNewStepRow() {
   currentEditingSteps.push({
     stepNumber: currentEditingSteps.length + 1,
     title: "",
+    cameraAngle: "POV (มุมสายตาตัวเอง)",
     description: "",
     imageUrl: "",
+    videoUrl: "",
     timerSeconds: 0,
     tip: ""
   });
@@ -320,7 +369,7 @@ function addNewStepRow() {
 function removeStepRow(index) {
   currentEditingSteps = syncCurrentStepsFromDOM();
   currentEditingSteps.splice(index, 1);
-  currentEditingSteps.forEach((s, idx) => s.stepNumber = idx + 1);
+  currentEditingSteps.forEach((s, idx) => (s.stepNumber = idx + 1));
   renderStepsBuilder();
 }
 
@@ -337,40 +386,37 @@ async function handleStepImageUpload(event, index) {
   if (!file) return;
 
   currentEditingSteps = syncCurrentStepsFromDOM();
-  showToast("⏳ กำลังประมวลผลและแปลงรูปภาพ...", "info", 2000);
+  showToast("⏳ กำลังประมวลผลและปรับความคมชัดรูปภาพ...", "info", 2000);
 
-  // ตรวจสอบว่าเป็นไฟล์ภาพ .HEIC / .HEIF จาก iPhone หรือไม่
   const fileNameLower = file.name ? file.name.toLowerCase() : "";
   const isHeic = fileNameLower.endsWith(".heic") || fileNameLower.endsWith(".heif") || (file.type && file.type.toLowerCase().includes("heic"));
 
-  if (isHeic) {
-    if (typeof window.heic2any === "function") {
-      try {
-        showToast("📱 กำลังแปลงรูปภาพ .HEIC จาก iPhone เป็น JPG...", "info", 2500);
-        const convertedBlob = await window.heic2any({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.7
-        });
-        file = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-      } catch (heicErr) {
-        console.error("HEIC conversion error:", heicErr);
-        showToast("⚠️ ไม่สามารถแปลงไฟล์ .HEIC ได้ กรุณาเลือกไฟล์ JPG หรือ PNG", "error", 4000);
-        return;
-      }
+  if (isHeic && typeof window.heic2any === "function") {
+    try {
+      showToast("📱 กำลังแปลงรูปภาพ .HEIC จาก iPhone...", "info", 2500);
+      const convertedBlob = await window.heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.78
+      });
+      file = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+    } catch (heicErr) {
+      console.error("HEIC conversion error:", heicErr);
+      showToast("⚠️ ไม่สามารถแปลงไฟล์ .HEIC ได้ กรุณาเลือกไฟล์ JPG หรือ PNG", "error", 4000);
+      return;
     }
   }
 
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       try {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
 
-        const MAX_WIDTH = 500;
+        const MAX_WIDTH = 720;
         if (width > MAX_WIDTH) {
           height = Math.round((height * MAX_WIDTH) / width);
           width = MAX_WIDTH;
@@ -382,140 +428,32 @@ async function handleStepImageUpload(event, index) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
-        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.5);
+        // บีบอัดเป็น WebP ความคมชัดสูง (Fallback เป็น JPEG)
+        let compressedDataUrl = canvas.toDataURL("image/webp", 0.72);
+        if (!compressedDataUrl || compressedDataUrl.length < 50) {
+          compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
+        }
 
         if (currentEditingSteps[index]) {
-          currentEditingSteps[index].imageUrl = jpegDataUrl;
+          currentEditingSteps[index].imageUrl = compressedDataUrl;
         }
         renderStepsBuilder();
-        showToast("📸 อัปโหลดและบีบอัดรูปภาพเรียบร้อยแล้ว!");
+        showToast("📸 อัปโหลดรูปภาพความละเอียดสูงเรียบร้อยแล้ว!");
       } catch (err) {
-        console.error("Canvas convert error:", err);
         if (currentEditingSteps[index]) {
           currentEditingSteps[index].imageUrl = e.target.result;
         }
         renderStepsBuilder();
       }
     };
-
-    img.onerror = () => {
-      showToast("⚠️ ไม่สามารถโหลดรูปภาพนี้ได้ กรุณาใช้ไฟล์ JPG หรือ PNG", "error", 4000);
-    };
-
     img.src = e.target.result;
   };
-
   reader.readAsDataURL(file);
 }
 
-function openManageSubCategoriesModal() {
-  try {
-    const subCategories = getSubCategoriesData();
-
-    let html = `
-      <div class="modal-overlay" id="subCatModalOverlay">
-        <div class="modal-card" style="max-width: 650px;">
-          <div class="modal-header">
-            <h3 style="font-size: 1.25rem; color: #fbbf24;">⚙️ จัดการหมวดหมู่ย่อยและชื่อวัตถุดิบ (Category Builder)</h3>
-            <button type="button" onclick="closeModal('subCatModalOverlay')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
-          </div>
-          <div class="modal-body">
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-              คุณสามารถเพิ่มรายชื่อวัตถุดิบดิบใหม่ หรือขั้นตอนการปรุงใหม่ เพื่อรองรับเมนูใหม่ๆ ที่เพิ่มขึ้นในอนาคต
-            </p>
-
-            <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 10px; margin-bottom: 1.25rem; border: 1px solid var(--border-color);">
-              <h4 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 0.75rem;">➕ เพิ่มวัตถุดิบ / กระบวนการใหม่</h4>
-              <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.6rem;">
-                <select id="newSubStage" class="form-select">
-                  <option value="prep">🥩 1. การเตรียมวัตถุดิบ</option>
-                  <option value="cooking">🍳 2. การปรุงและการทอด</option>
-                  <option value="serving-packaging">📦 3. การเสิร์ฟและแพ็ก</option>
-                  <option value="hygiene">🧹 4. สุขอนามัย</option>
-                </select>
-                <input type="text" id="newSubLabel" class="form-input" placeholder="เช่น น่องไก่ดิบ, หนังไก่กรอบ" />
-                <button type="button" class="action-btn btn-primary" onclick="handleAddSubCategorySubmit()" style="width: auto; padding: 0.6rem 1rem; margin: 0;">เพิ่ม</button>
-              </div>
-            </div>
-
-            <h4 style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.5rem;">📋 รายการวัตถุดิบและขั้นตอนปัจจุบัน:</h4>
-            <div style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
-              ${subCategories.map(s => `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 0.6rem 0.8rem; border-radius: 8px;">
-                  <div>
-                    <span style="font-weight: 700; color: #fbbf24;">${s.label}</span>
-                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(${getStageLabelText(s.stage)})</span>
-                  </div>
-                  <button type="button" onclick="handleRemoveSubCategory('${s.id}')" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer;">ลบ 🗑️</button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <div style="margin-top: 1.5rem; text-align: right;">
-            <button type="button" class="action-btn btn-secondary" onclick="closeModal('subCatModalOverlay')" style="width: auto; display: inline-block;">ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const existing = document.getElementById("subCatModalOverlay");
-    if (existing) existing.remove();
-
-    document.body.insertAdjacentHTML("beforeend", html);
-  } catch (err) {
-    console.error("Error in openManageSubCategoriesModal:", err);
-    showToast("เกิดข้อผิดพลาดในการเปิดหน้าจัดการวัตถุดิบ: " + err.message, "error");
-  }
-}
-
-function handleAddSubCategorySubmit() {
-  try {
-    const stageEl = document.getElementById("newSubStage");
-    const labelEl = document.getElementById("newSubLabel");
-
-    const stage = stageEl ? stageEl.value : "prep";
-    const label = labelEl ? labelEl.value.trim() : "";
-
-    if (!label) {
-      showToast("⚠️ กรุณาระบุชื่อวัตถุดิบหรือกระบวนการ", "error");
-      return;
-    }
-
-    addSubCategoryItem(stage, label);
-    openManageSubCategoriesModal();
-    renderSidebarNavigation();
-    renderSOPList();
-    
-    const editCat = document.getElementById("editCategory");
-    if (editCat) updateSubCategoryDropdownOptions(editCat.value);
-
-    showToast(`✅ เพิ่มวัตถุดิบ/กระบวนการ "${label}" เรียบร้อยแล้ว!`);
-  } catch (err) {
-    console.error("Error adding sub category:", err);
-    showToast("เกิดข้อผิดพลาดในการเพิ่มวัตถุดิบ: " + err.message, "error");
-  }
-}
-
-function handleRemoveSubCategory(id) {
-  if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ย่อยนี้?")) {
-    removeSubCategoryItem(id);
-    openManageSubCategoriesModal();
-    renderSidebarNavigation();
-    renderSOPList();
-    showToast("🗑️ ลบหมวดหมู่ย่อยแล้ว", "info");
-  }
-}
-
-function getStageLabelText(stage) {
-  switch (stage) {
-    case "prep": return "การเตรียมวัตถุดิบ";
-    case "cooking": return "การปรุงและการทอด";
-    case "serving-packaging": return "การเสิร์ฟและการแพ็ก";
-    case "hygiene": return "สุขอนามัย";
-    default: return stage;
-  }
-}
+// =========================================================================
+// Textarea Parsers & Formatters สำหรับ Ingredients, Specs, Pass/Fail, Troubleshooting
+// =========================================================================
 
 function formatIngredientsForTextarea(ingredients = []) {
   if (!ingredients || !ingredients.length) return "";
@@ -523,48 +461,84 @@ function formatIngredientsForTextarea(ingredients = []) {
 }
 
 function parseIngredientsFromTextarea(text) {
-  const lines = text.split("\n");
-  const result = [];
-  lines.forEach(line => {
+  if (!text) return [];
+  return text.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
     const parts = line.split(",").map(p => p.trim());
-    if (parts[0]) {
-      result.push({
-        name: parts[0],
-        amount: parseFloat(parts[1]) || 1,
-        unit: parts[2] || "ชิ้น"
-      });
-    }
+    return {
+      name: parts[0] || "วัตถุดิบ",
+      amount: parseFloat(parts[1]) || 1,
+      unit: parts[2] || "g"
+    };
   });
-  return result;
+}
+
+function formatSpecsForTextarea(specs = []) {
+  if (!specs || !specs.length) return "";
+  return specs.map(s => `${s.label} : ${s.value}`).join("\n");
+}
+
+function parseSpecsFromTextarea(text) {
+  if (!text) return [];
+  return text.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+    const parts = line.split(":").map(p => p.trim());
+    return {
+      label: parts[0] || "หัวข้อ",
+      value: parts.slice(1).join(": ") || "-"
+    };
+  });
+}
+
+function formatQualityChecksForTextarea(checks = []) {
+  if (!checks || !checks.length) return "";
+  return checks.map(c => `${c.topic} | ${c.pass} | ${c.fail}`).join("\n");
+}
+
+function parseQualityChecksFromTextarea(text) {
+  if (!text) return [];
+  return text.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+    const parts = line.split("|").map(p => p.trim());
+    return {
+      topic: parts[0] || "จุดตรวจ",
+      pass: parts[1] || "ผ่านเกณฑ์",
+      fail: parts[2] || "ไม่ผ่านเกณฑ์"
+    };
+  });
+}
+
+function formatTroubleshootingForTextarea(list = []) {
+  if (!list || !list.length) return "";
+  return list.map(t => `${t.problem} | ${t.solution}`).join("\n");
+}
+
+function parseTroubleshootingFromTextarea(text) {
+  if (!text) return [];
+  return text.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+    const parts = line.split("|").map(p => p.trim());
+    return {
+      problem: parts[0] || "ปัญหาที่พบ",
+      solution: parts[1] || "แนวทางแก้ไข"
+    };
+  });
 }
 
 async function handleSaveSOP(event, id) {
   if (event) event.preventDefault();
-  
+
   try {
     const allSop = getSOPData();
 
-    const titleEl = document.getElementById("editTitle");
-    const categoryEl = document.getElementById("editCategory");
-    const subCategoryEl = document.getElementById("editSubCategory");
-    const versionEl = document.getElementById("editVersion");
-    const authorEl = document.getElementById("editAuthor");
-    const changeNotesEl = document.getElementById("editChangeNotes");
-    const prepTimeEl = document.getElementById("editPrepTime");
-    const cookTimeEl = document.getElementById("editCookTime");
-    const yieldEl = document.getElementById("editYield");
-    const summaryEl = document.getElementById("editSummary");
-
-    const title = titleEl && titleEl.value.trim() ? titleEl.value.trim() : "คู่มือ SOP ไก่ทอด";
-    const category = categoryEl ? categoryEl.value : "prep";
-    const subCategory = subCategoryEl ? subCategoryEl.value : "thigh";
-    const version = versionEl && versionEl.value.trim() ? versionEl.value.trim() : "1.0";
-    const author = authorEl && authorEl.value.trim() ? authorEl.value.trim() : "Admin";
-    const changeNotes = changeNotesEl && changeNotesEl.value.trim() ? changeNotesEl.value.trim() : "ปรับปรุงขั้นตอน/สูตรอาหาร";
-    const prepTime = prepTimeEl ? prepTimeEl.value.trim() : "";
-    const cookTime = cookTimeEl ? cookTimeEl.value.trim() : "";
-    const yieldVal = yieldEl ? yieldEl.value.trim() : "";
-    const summary = summaryEl ? summaryEl.value.trim() : "";
+    const docCode = document.getElementById("editDocCode")?.value.trim() || "SOP-OPS";
+    const title = document.getElementById("editTitle")?.value.trim() || "คู่มือ SOP ร้านผมขอทอด";
+    const category = document.getElementById("editCategory")?.value || "stage-2-prep";
+    const subCategory = document.getElementById("editSubCategory")?.value || "thigh";
+    const version = document.getElementById("editVersion")?.value.trim() || "1.0";
+    const author = document.getElementById("editAuthor")?.value.trim() || "Admin";
+    const changeNotes = document.getElementById("editChangeNotes")?.value.trim() || "ปรับปรุงมาตรฐาน";
+    const prepTime = document.getElementById("editPrepTime")?.value.trim() || "10 นาที";
+    const cookTime = document.getElementById("editCookTime")?.value.trim() || "-";
+    const yieldVal = document.getElementById("editYield")?.value.trim() || "1 Batch";
+    const sellingPrice = parseFloat(document.getElementById("editSellingPrice")?.value) || 0;
+    const summary = document.getElementById("editSummary")?.value.trim() || "";
 
     const targetRole = [];
     if (document.getElementById("roleKitchen")?.checked) targetRole.push("kitchen");
@@ -572,52 +546,67 @@ async function handleSaveSOP(event, id) {
     if (document.getElementById("roleAdmin")?.checked) targetRole.push("admin");
 
     const ingredients = parseIngredientsFromTextarea(document.getElementById("editIngredientsRaw")?.value || "");
-
+    const specifications = parseSpecsFromTextarea(document.getElementById("editSpecsRaw")?.value || "");
+    const qualityChecks = parseQualityChecksFromTextarea(document.getElementById("editQualityRaw")?.value || "");
+    const troubleshooting = parseTroubleshootingFromTextarea(document.getElementById("editTroubleRaw")?.value || "");
     const steps = syncCurrentStepsFromDOM();
 
     const existingIndex = allSop.findIndex(s => s.id === id);
     let versionHistory = [];
+    let matrixTitle = "";
+    let matrixHeaders = [];
+    let matrixRows = [];
 
     if (existingIndex >= 0) {
       const existingSop = allSop[existingIndex];
       versionHistory = Array.isArray(existingSop.versionHistory) ? existingSop.versionHistory : [];
+      matrixTitle = existingSop.matrixTitle || "";
+      matrixHeaders = existingSop.matrixHeaders || [];
+      matrixRows = existingSop.matrixRows || [];
 
       const oldSnapshot = JSON.parse(JSON.stringify(existingSop));
       delete oldSnapshot.versionHistory;
 
       versionHistory.unshift({
         version: existingSop.version || "1.0",
-        updatedAt: existingSop.updatedAt || new Date().toISOString().replace('T', ' ').substring(0, 16),
+        updatedAt: existingSop.updatedAt || new Date().toISOString().replace("T", " ").substring(0, 16),
         author: existingSop.author || "Admin",
-        changeNotes: existingSop.changeNotes || "สูตรเวอร์ชันก่อนหน้า",
+        changeNotes: existingSop.changeNotes || "เวอร์ชันก่อนหน้า",
         snapshot: oldSnapshot
       });
     }
 
-    const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const nowStr = new Date().toISOString().replace("T", " ").substring(0, 16);
 
     const sopObj = {
-      id: id,
-      title: title,
-      category: category,
-      subCategory: subCategory,
-      version: version,
+      id,
+      docCode,
+      title,
+      category,
+      subCategory,
+      version,
       updatedAt: nowStr,
-      author: author,
-      changeNotes: changeNotes,
-      versionHistory: versionHistory,
+      author,
+      changeNotes,
+      versionHistory,
       targetRole: targetRole.length ? targetRole : ["kitchen", "front", "admin"],
-      prepTime: prepTime || "10 นาที",
-      cookTime: cookTime || "-",
-      yield: yieldVal || "1 เสิร์ฟ",
-      summary: summary,
-      tags: [category, subCategory, title.substring(0, 10)],
-      specifications: [
-        { label: "เวลาเตรียม", value: prepTime || "10 นาที" },
-        { label: "เวลาปรุง/ทอด", value: cookTime || "-" }
+      prepTime,
+      cookTime,
+      yield: yieldVal,
+      sellingPrice,
+      summary,
+      tags: [category, subCategory, docCode, title.substring(0, 15)],
+      specifications: specifications.length ? specifications : [
+        { label: "เวลาเตรียม", value: prepTime },
+        { label: "เวลาปรุง/ทอด", value: cookTime }
       ],
-      ingredients: ingredients,
-      steps: steps.length ? steps : [{ stepNumber: 1, title: "ขั้นตอนปฏิบัติ", description: summary, imageUrl: "", timerSeconds: 0, tip: "" }]
+      matrixTitle,
+      matrixHeaders,
+      matrixRows,
+      qualityChecks,
+      troubleshooting,
+      ingredients,
+      steps: steps.length ? steps : [{ stepNumber: 1, title: "ขั้นตอนปฏิบัติ", description: summary, imageUrl: "", videoUrl: "", cameraAngle: "POV (มุมสายตาตัวเอง)", timerSeconds: 0, tip: "" }]
     };
 
     if (existingIndex >= 0) {
@@ -627,20 +616,12 @@ async function handleSaveSOP(event, id) {
     }
 
     saveSOPData(allSop);
-    
     closeModal("cmsModalOverlay");
 
     renderSidebarNavigation();
-    renderSOPList();
+    renderMainView();
 
-    showToast(`⏳ กำลังซิงค์สูตร v${version} ลงคลาวด์กลาง...`, "info", 1500);
-
-    const isCloudSuccess = await syncSOPDataToCloud(allSop);
-    if (isCloudSuccess) {
-      showToast(`☁️ บันทึกและซิงค์สูตร v${version} ลงคลาวด์เรียบร้อยแล้ว!`);
-    } else {
-      showToast(`💾 บันทึกสำเร็จในเครื่อง (คลาวด์ซิงค์ชั่วคราว)`);
-    }
+    showToast(`☁️ บันทึกและซิงค์คู่มือ ${docCode} (v${version}) เรียบร้อยแล้ว!`);
   } catch (err) {
     console.error("Error saving SOP:", err);
     showToast("เกิดข้อผิดพลาดในการบันทึก: " + err.message, "error");
@@ -648,60 +629,160 @@ async function handleSaveSOP(event, id) {
 }
 
 async function deleteSOP(id, fallbackIdx) {
-  if (confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบ SOP นี้ออกจากระบบ?")) {
+  if (confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบคู่มือ SOP นี้ออกจากระบบ?")) {
     let allSop = getSOPData();
 
-    if (id && !id.startsWith('temp-') && id !== 'undefined') {
-      allSop = allSop.filter(s => s && s.id !== id && s.title !== 'undefined');
-    } else if (typeof fallbackIdx === 'number' && fallbackIdx >= 0 && allSop[fallbackIdx]) {
+    if (id && !id.startsWith("temp-") && id !== "undefined") {
+      allSop = allSop.filter(s => s && s.id !== id && s.title !== "undefined");
+    } else if (typeof fallbackIdx === "number" && fallbackIdx >= 0 && allSop[fallbackIdx]) {
       allSop.splice(fallbackIdx, 1);
-    } else {
-      allSop = allSop.filter(s => s && s.title && s.title !== 'undefined');
-    }
-    
-    // ลบออกจาก LocalStorage
-    try {
-      localStorage.setItem("PKT_SOP_DATA_V10", JSON.stringify(allSop));
-    } catch (e) {
-      console.warn("LocalStorage quota error:", e);
     }
 
-    // ลบออกจาก Supabase Cloud DB ถาวร
+    saveSOPData(allSop);
+
+    if (typeof isFirebaseConfigured === "function" && isFirebaseConfigured() && id) {
+      await firestoreDeleteDocument("pkt_sops", id);
+    }
+
     const client = initSupabaseClient();
-    if (client) {
-      try {
-        if (id && !id.startsWith('temp-') && id !== 'undefined') {
-          await client.from('sop_data').delete().eq('id', id);
-        }
-        await client.from('sop_data').delete().eq('title', 'undefined');
-        await client.from('sop_data').delete().is('title', null);
-      } catch (err) {
-        console.error("Error deleting from Supabase:", err);
-      }
+    if (client && id && !id.startsWith("temp-")) {
+      try { await client.from("sop_data").delete().eq("id", id); } catch (e) {}
     }
 
-    const modal = document.getElementById("cmsModalOverlay");
-    if (modal) modal.remove();
-
+    closeModal("cmsModalOverlay");
     if (typeof backToGrid === "function") backToGrid();
     renderSidebarNavigation();
-    renderSOPList();
-    showToast("🗑️ ลบข้อมูล SOP ออกจากระบบและคลาวด์เรียบร้อยแล้ว", "success");
+    renderMainView();
+    showToast("🗑️ ลบคู่มือ SOP ออกจากระบบเรียบร้อยแล้ว", "success");
   }
 }
 
+function openManageSubCategoriesModal() {
+  const subCategories = getSubCategoriesData();
+  const stages = typeof WORKFLOW_STAGES_META !== "undefined" ? WORKFLOW_STAGES_META : [];
+
+  const html = `
+    <div class="modal-overlay" id="subCatModalOverlay">
+      <div class="modal-card" style="max-width: 680px;">
+        <div class="modal-header">
+          <h3 style="font-size: 1.25rem; color: #b45309;">⚙️ จัดการหมวดหมู่ย่อยใน 7 ไทม์ไลน์หลัก</h3>
+          <button type="button" onclick="closeModal('subCatModalOverlay')" style="background:none; border:none; color:var(--text-main); font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 0.75rem;">➕ เพิ่มหมวดหมู่ย่อย / สเตชันใหม่</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.6rem;">
+              <select id="newSubStage" class="form-select">
+                ${stages.map(st => `<option value="${st.id}">${st.icon} ${st.shortTitle}</option>`).join("")}
+              </select>
+              <input type="text" id="newSubLabel" class="form-input" placeholder="เช่น ทอดหนังไก่กรอบ, จัดเซ็ตปาร์ตี้" />
+              <button type="button" class="action-btn btn-primary" onclick="handleAddSubCategorySubmit()" style="width: auto; padding: 0.6rem 1rem;">เพิ่ม</button>
+            </div>
+          </div>
+
+          <div style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+            ${subCategories.map(s => `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid var(--border-color); padding: 0.6rem 0.9rem; border-radius: 10px;">
+                <div>
+                  <span style="font-weight: 700; color: var(--text-main);">${escapeHtml(s.label)}</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(${getCategoryBadge(s.stage)})</span>
+                </div>
+                <button type="button" onclick="handleRemoveSubCategory('${s.id}')" style="background: none; border: none; color: #dc2626; font-size: 0.8rem; font-weight: 700; cursor: pointer;">ลบ 🗑️</button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const existing = document.getElementById("subCatModalOverlay");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+
+function handleAddSubCategorySubmit() {
+  const stage = document.getElementById("newSubStage")?.value || "stage-2-prep";
+  const label = document.getElementById("newSubLabel")?.value.trim() || "";
+  if (!label) {
+    showToast("⚠️ กรุณาระบุชื่อหมวดหมู่ย่อย", "error");
+    return;
+  }
+  addSubCategoryItem(stage, label);
+  openManageSubCategoriesModal();
+  renderSidebarNavigation();
+  const editCat = document.getElementById("editCategory");
+  if (editCat) updateSubCategoryDropdownOptions(editCat.value);
+  showToast(`✅ เพิ่มหมวดย่อย "${label}" เรียบร้อยแล้ว!`);
+}
+
+function handleRemoveSubCategory(id) {
+  if (confirm("ต้องการลบหมวดหมู่ย่อยนี้ใช่หรือไม่?")) {
+    removeSubCategoryItem(id);
+    openManageSubCategoriesModal();
+    renderSidebarNavigation();
+  }
+}
+
+function openVersionHistoryModal(sopId) {
+  const allSop = getSOPData();
+  const sop = allSop.find(s => s.id === sopId);
+  if (!sop) return;
+
+  const history = Array.isArray(sop.versionHistory) ? sop.versionHistory : [];
+
+  const html = `
+    <div class="modal-overlay" id="versionHistoryModalOverlay">
+      <div class="modal-card" style="max-width: 650px;">
+        <div class="modal-header">
+          <div>
+            <h3 style="font-size: 1.2rem; color: #b45309;">📜 ประวัติการแก้ไขสูตร: ${escapeHtml(sop.title)}</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">เวอร์ชันปัจจุบัน: v${escapeHtml(sop.version || '1.0')}</span>
+          </div>
+          <button type="button" onclick="closeModal('versionHistoryModalOverlay')" style="background:none; border:none; color:var(--text-main); font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${history.length === 0 ? `<p style="text-align:center; padding:2rem; color:var(--text-muted);">ยังไม่มีประวัติเวอร์ชันก่อนหน้า</p>` : `
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+              ${history.map((h, idx) => `
+                <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-weight:800; color:#b45309;">เวอร์ชัน v${escapeHtml(h.version)} (${escapeHtml(h.updatedAt)})</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted);">ผู้แก้ไข: ${escapeHtml(h.author)} • หมายเหตุ: ${escapeHtml(h.changeNotes)}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const existing = document.getElementById("versionHistoryModalOverlay");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+
 function exportSOPJSON() {
-  const data = getSOPData();
-  const subCats = getSubCategoriesData();
-  const exportPayload = { sopList: data, subCategories: subCats };
-  
-  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    sopList: getSOPData(),
+    subCategories: getSubCategoriesData(),
+    branches: getBranchesData(),
+    masterIngredients: getMasterIngredients(),
+    dailyLogs: getDailyOperationsLogs(),
+    deliveryClaims: getDeliveryClaimsData(),
+    wasteLogs: getWasteLogsData()
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `PomKhorThod_SOP_Full_Backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `PomKhorThod_Franchise_Backup_${new Date().toISOString().split("T")[0]}.json`;
   a.click();
-  showToast("📤 ส่งออกไฟล์สำรอง JSON แล้ว");
+  showToast("📤 ส่งออกไฟล์สำรองข้อมูลทั้งระบบ (Full JSON Backup) เรียบร้อยแล้ว");
 }
 
 function importSOPJSON() {
@@ -718,21 +799,21 @@ function importSOPJSON() {
         if (imported.sopList && Array.isArray(imported.sopList)) {
           saveSOPData(imported.sopList);
           if (imported.subCategories) saveSubCategoriesData(imported.subCategories);
+          if (imported.masterIngredients) saveMasterIngredients(imported.masterIngredients);
+          if (imported.dailyLogs) saveDailyOperationsLogs(imported.dailyLogs);
+          if (imported.deliveryClaims) saveDeliveryClaimsData(imported.deliveryClaims);
+          if (imported.wasteLogs) saveWasteLogsData(imported.wasteLogs);
           renderSidebarNavigation();
-          renderSOPList();
-          await syncSOPDataToCloud(imported.sopList);
-          showToast("📥 นำเข้าและซิงค์ข้อมูล SOP ลงคลาวด์สำเร็จแล้ว!");
+          renderMainView();
+          showToast("📥 นำเข้าและอัปเดตข้อมูลทั้งระบบสำเร็จแล้ว!");
         } else if (Array.isArray(imported)) {
           saveSOPData(imported);
           renderSidebarNavigation();
-          renderSOPList();
-          await syncSOPDataToCloud(imported);
-          showToast("📥 นำเข้าและซิงค์ข้อมูล SOP สำเร็จแล้ว!");
-        } else {
-          showToast("รูปแบบไฟล์ JSON ไม่ถูกต้อง", "error");
+          renderMainView();
+          showToast("📥 นำเข้าข้อมูล SOP สำเร็จแล้ว!");
         }
       } catch (err) {
-        showToast("เกิดข้อผิดพลาดในการอ่านไฟล์ JSON", "error");
+        showToast("รูปแบบไฟล์ JSON ไม่ถูกต้อง", "error");
       }
     };
     reader.readAsText(file);
@@ -741,109 +822,18 @@ function importSOPJSON() {
 }
 
 async function handleManualCloudPull() {
-  if (CLOUD_CONFIG.supabaseUrl === "YOUR_SUPABASE_URL_HERE") {
-    openSupabaseSettingsModal();
-    return;
-  }
-  showToast("☁️ กำลังดึงสูตรอาหารล่าสุดจาก Supabase Cloud...", "info", 1500);
-  if (typeof fetchSOPDataFromCloud === "function") {
-    const cloudData = await fetchSOPDataFromCloud();
-    if (cloudData) {
-      renderSidebarNavigation();
-      renderSOPList();
-      showToast("✅ ดึงสูตรอาหารล่าสุดจาก Supabase สำเร็จแล้ว!");
-    } else {
-      showToast("⚠️ ยังไม่พบข้อมูลในตาราง sop_data หรือยังสร้างตารางไม่เสร็จ", "error");
-    }
+  if (typeof openFirebaseSetupModal === "function") {
+    openFirebaseSetupModal();
   }
 }
-
-function openSupabaseSettingsModal() {
-  const currentUrl = CLOUD_CONFIG.supabaseUrl === "YOUR_SUPABASE_URL_HERE" ? "" : CLOUD_CONFIG.supabaseUrl;
-  const currentKey = CLOUD_CONFIG.supabaseKey === "YOUR_SUPABASE_ANON_KEY_HERE" ? "" : CLOUD_CONFIG.supabaseKey;
-
-  const modalHtml = `
-    <div class="modal-overlay" id="supabaseSettingsModal">
-      <div class="modal-card" style="max-width: 650px;">
-        <div class="modal-header">
-          <div>
-            <h3 style="font-size: 1.25rem; color: #10b981;">🚀 ตั้งค่าเชื่อมต่อ Supabase Database</h3>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">ระบบฐานข้อมูลคลาวด์ ซิงค์สูตรเรียลไทม์ 0.1s ข้ามทุกเครื่อง</span>
-          </div>
-          <button type="button" onclick="closeModal('supabaseSettingsModal')" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
-        </div>
-        <form onsubmit="handleSaveSupabaseConfig(event)">
-          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.5;">
-            📌 <b>ขั้นตอนง่ายๆ 30 วินาที:</b><br>
-            1. ไปที่ <a href="https://supabase.com" target="_blank" style="color: #34d399; font-weight: bold;">supabase.com</a> กดสมัครฟรี ➔ สร้างโปรเจกต์ใหม่<br>
-            2. ไปที่ <b>⚙️ Project Settings ➔ API</b><br>
-            3. ก๊อปปี้ <b>Project URL</b> และ <b>anon public key</b> มาวางด้านล่างได้เลยค่ะ
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Project URL *</label>
-            <input type="url" id="spUrlInput" class="form-input" value="${escapeHtml(currentUrl)}" placeholder="เช่น https://xyzcompany.supabase.co" required />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Anon Public Key *</label>
-            <textarea id="spKeyInput" class="form-input" style="height: 80px; font-family: monospace; font-size: 0.8rem;" placeholder="รหัสยาวๆ ที่ขึ้นต้นด้วย eyJhbGciOiJKV1Qi..." required>${escapeHtml(currentKey)}</textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="action-btn btn-secondary" onclick="closeModal('supabaseSettingsModal')">ยกเลิก</button>
-            <button type="submit" class="action-btn btn-primary" style="background: #059669; color: white;">💾 บันทึกและเชื่อมต่อเรียลไทม์</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-function handleSaveSupabaseConfig(e) {
-  e.preventDefault();
-  const url = document.getElementById("spUrlInput").value.trim();
-  const key = document.getElementById("spKeyInput").value.trim();
-
-  if (url && key) {
-    CLOUD_CONFIG.supabaseUrl = url;
-    CLOUD_CONFIG.supabaseKey = key;
-    localStorage.setItem("PKT_SUPABASE_URL", url);
-    localStorage.setItem("PKT_SUPABASE_KEY", key);
-
-    closeModal('supabaseSettingsModal');
-    initSupabaseClient();
-    
-    // Auto push initial data if empty
-    const currentData = getSOPData();
-    syncSOPToSupabaseCloud(currentData);
-
-    showToast("✅ เชื่อมต่อ Supabase เรียลไทม์สำเร็จแล้ว!", "success");
-    renderSOPList();
-  }
-}
-
-// Load custom Supabase config from localStorage if stored
-(function checkSavedSupabaseConfig() {
-  const savedUrl = localStorage.getItem("PKT_SUPABASE_URL");
-  const savedKey = localStorage.getItem("PKT_SUPABASE_KEY");
-  if (savedUrl && savedKey) {
-    CLOUD_CONFIG.supabaseUrl = savedUrl;
-    CLOUD_CONFIG.supabaseKey = savedKey;
-    setTimeout(() => {
-      initSupabaseClient();
-    }, 500);
-  }
-})();
 
 function resetToDefaultSOP() {
-  if (confirm("⚠️ คุณต้องการรีเซ็ตข้อมูล SOP และหมวดหมู่ย่อยทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) {
-    localStorage.removeItem("PKT_SOP_DATA_V10");
-    localStorage.removeItem("PKT_SUB_CATEGORIES_V1");
+  if (confirm("⚠️ ต้องการรีเซ็ตข้อมูลคู่มือ SOP กลับเป็นชุดมาตรฐานแฟรนไชส์ 7 หมวดหมู่เริ่มต้นใช่หรือไม่?")) {
+    localStorage.removeItem("PKT_SOP_DATA_V30");
+    localStorage.removeItem("PKT_SUB_CATEGORIES_V30");
     renderSidebarNavigation();
-    renderSOPList();
-    showToast("🔄 รีเซ็ตข้อมูล SOP กลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว", "info");
+    renderMainView();
+    showToast("🔄 รีเซ็ตข้อมูลเป็นมาตรฐาน 7 หมวดหมู่เริ่มต้นเรียบร้อยแล้ว", "info");
   }
 }
 
@@ -854,5 +844,9 @@ function closeModal(modalId) {
 
 function escapeHtml(text) {
   if (!text) return "";
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

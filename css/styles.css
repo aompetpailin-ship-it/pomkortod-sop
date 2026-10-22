@@ -706,15 +706,281 @@ body {
   .kitchen-timer-widget { left: 1rem; right: 1rem; bottom: 1rem; justify-content: space-between; }
 }
 
-/* Print Stylesheet */
+/* ==========================================================================
+   FRANCHISE OPERATIONS MODULES, CHEAT SHEETS & 3-ZONE SOP UI
+   ========================================================================== */
+
+.ops-quick-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.ops-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.ops-quick-btn:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.14);
+}
+
+.ops-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  background: #f1f5f9;
+  padding: 0.45rem;
+  border-radius: 14px;
+}
+
+.ops-tab-btn {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #475569;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ops-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.ops-tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* Station Cheat Sheet Boards (Large Font for Kitchen & Packing Stations) */
+.cheat-sheet-board {
+  background: #ffffff;
+  border: 3px solid #0f172a;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+}
+
+.cheat-header {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #ffffff;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 4px solid var(--primary);
+}
+
+.cheat-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.5px;
+}
+
+.cheat-header h3 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin: 0;
+  color: #ffffff;
+}
+
+.cheat-temp-box {
+  background: #dc2626;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid #fca5a5;
+}
+
+.cheat-body {
+  padding: 1.75rem;
+}
+
+.matrix-table-large {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.matrix-table-large th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.matrix-table-large td {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid #cbd5e1;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.matrix-table-large tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.temp-pill {
+  display: inline-block;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.pass-pill {
+  display: inline-block;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1.5px solid #6ee7b7;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.flow-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.flow-step-box {
+  background: #f8fafc;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 1.1rem;
+  position: relative;
+}
+
+.flow-step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #f59e0b;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.flow-step-title {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+}
+
+.flow-step-BoxDesc, .flow-step-desc {
+  font-size: 0.88rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.troubleshoot-accordion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.troubleshoot-card {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.ts-issue {
+  font-weight: 900;
+  color: #b45309;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.ts-cause {
+  font-size: 0.84rem;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.ts-fix {
+  font-size: 0.88rem;
+  color: #047857;
+  font-weight: 700;
+}
+
+/* Print Stylesheet (Supports A4 SOPs, Station Cheat Sheets & Daily Forms) */
 @media print {
-  body { background: #ffffff !important; color: #000000 !important; font-size: 11pt; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body { background: #ffffff !important; color: #000000 !important; font-size: 10.5pt; }
   .top-navbar, .sidebar, .search-box, .back-btn, .timer-start-btn, 
-  .kitchen-timer-widget, .quick-tools-box, #cloudStatusBadge, button { display: none !important; }
+  .kitchen-timer-widget, .quick-tools-box, #cloudStatusBadge, 
+  .ops-quick-strip, .ops-tabs-bar, button { display: none !important; }
   .app-container { display: block !important; padding: 0 !important; }
-  .main-content { padding: 0 !important; }
-  .sop-detail-view { background: #ffffff !important; border: 2px solid #000000 !important; color: #000000 !important; padding: 20px !important; }
-  .sop-detail-title { color: #000000 !important; font-size: 20pt !important; border-bottom: 2px solid #000; }
-  .step-card { background: #ffffff !important; border: 1px solid #94a3b8 !important; color: #000000 !important; page-break-inside: avoid; }
-  .step-number { background: #000000 !important; color: #ffffff !important; }
+  .main-content { padding: 0 !important; max-width: 100% !important; }
+  .sop-detail-view, .cheat-sheet-board {
+    background: #ffffff !important;
+    border: 2px solid #000000 !important;
+    color: #000000 !important;
+    padding: 14px !important;
+    box-shadow: none !important;
+  }
+  .cheat-header {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #000000 !important;
+  }
+  .cheat-header h3 { color: #000000 !important; }
+  .sop-detail-title { color: #000000 !important; font-size: 18pt !important; border-bottom: 2px solid #000; }
+  .step-card, .flow-step-box, .troubleshoot-card {
+    background: #ffffff !important;
+    border: 1px solid #64748b !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+  }
+  .step-number, .flow-step-num { background: #000000 !important; color: #ffffff !important; }
+  .matrix-table-large th { background: #e2e8f0 !important; color: #000000 !important; border: 1px solid #000000 !important; }
+  .matrix-table-large td { border: 1px solid #64748b !important; }
 }

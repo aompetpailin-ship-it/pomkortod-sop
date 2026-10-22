@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบ SOP ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod) - Dynamic Workflow Portal</title>
+  <title>ระบบ SOP ร้านไก่ทอด "ผมขอทอด" (Pom Khor Thod) - Franchise Operations & SOP Portal</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,10 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/styles.css?v=30">
 
-  <!-- Supabase Enterprise Cloud Client SDK (Local Offline Bundle + Realtime) -->
-  <script src="js/supabase.js?v=14"></script>
+  <!-- Cloud Client SDKs (Supabase Legacy Bridge + Firebase Firestore Engine) -->
+  <script src="js/supabase.js?v=30"></script>
+  <script src="js/firebase-engine.js?v=30"></script>
 </head>
 <body>
 
@@ -23,13 +24,13 @@
     <a href="#" class="brand-logo" onclick="backToGrid()">
       <img src="assets/logo.png" alt="ผมขอทอด" class="brand-logo-img" />
       <span>ผมขอทอด</span>
-      <span class="brand-badge">SOP PORTAL</span>
+      <span class="brand-badge">FRANCHISE SOP & OPS</span>
     </a>
 
-    <!-- Supabase Cloud Connection Status Indicator -->
+    <!-- Cloud Connection Status Indicator -->
     <div id="cloudStatusBadge" style="display: flex; align-items: center; gap: 0.4rem; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; color: #047857; font-weight: 700; cursor: pointer;" onclick="handleManualCloudPull()">
       <span style="width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #10b981;"></span>
-      <span>Supabase Realtime: เชื่อมต่อแล้ว</span>
+      <span>กำลังตรวจสอบ Cloud Database...</span>
     </div>
 
     <!-- Navbar Logged-in User Profile & Logout Area -->
@@ -42,37 +43,40 @@
     <!-- Sidebar Navigation Divided by Dynamic Operational Workflows -->
     <aside class="sidebar">
       <div>
-        <div class="sidebar-title">ขั้นตอนการทำงาน (WORKFLOW STAGES)</div>
+        <div class="sidebar-title">เมนูระบบ & 7 ขั้นตอนการทำงาน</div>
         <nav class="category-nav" id="sidebarNavContainer">
-          <!-- Dynamic Sub-category list populated by app.js -->
+          <!-- Dynamic Navigation populated by app.js -->
         </nav>
       </div>
 
       <!-- Quick Admin Tools -->
       <div class="quick-tools-box">
         <div class="quick-tools-title">
-          <span>🚀 Supabase Cloud Database</span>
+          <span>🔥 Cloud Database & Admin Tools</span>
         </div>
         <button class="action-btn btn-primary" onclick="handleManualCloudPull()" style="background: #059669; color: white;">
-          🔄 ดึงสูตรล่าสุดจาก Supabase
+          🔄 ซิงค์ข้อมูลล่าสุดจาก Cloud
+        </button>
+        <button class="action-btn btn-secondary admin-only" onclick="openFirebaseSetupModal()" style="border-color:#fdba74; background:#fff7ed; color:#c2410c; font-weight:800;">
+          🔥 ตั้งค่า Firebase / โอนย้ายข้อมูลฟรี
         </button>
         <button class="action-btn btn-primary admin-only" onclick="openAddSOPModal()">
           ➕ เพิ่ม SOP ใหม่
         </button>
         <button class="action-btn btn-secondary admin-only" onclick="openManageSubCategoriesModal()">
-          ⚙️ เพิ่ม/จัดการชื่อวัตถุดิบใหม่
+          ⚙️ เพิ่ม/จัดการหมวดหมู่วัตถุดิบ
         </button>
         <button class="action-btn btn-secondary admin-only" onclick="openManageAccountsModal()">
-          🔐 จัดการรหัสผ่านพนักงาน
+          🔐 จัดการบัญชี & ระงับสิทธิ์พนักงาน
         </button>
         <button class="action-btn btn-secondary admin-only" onclick="exportSOPJSON()">
-          📤 ส่งออก JSON สำรอง
+          📤 ส่งออก JSON สำรองข้อมูล
         </button>
         <button class="action-btn btn-secondary admin-only" onclick="importSOPJSON()">
-          📥 นำเข้า JSON
+          📥 นำเข้าไฟล์ JSON
         </button>
-        <button class="action-btn btn-secondary admin-only" onclick="resetToDefaultSOP()" style="color: #f87171;">
-          🔄 รีเซ็ตค่าเริ่มต้น
+        <button class="action-btn btn-secondary admin-only" onclick="resetToDefaultSOP()" style="color: #dc2626;">
+          🔄 รีเซ็ตและโหลด SOP มาตรฐาน 7 ขั้นตอน
         </button>
       </div>
     </aside>
@@ -83,7 +87,7 @@
       <div style="margin-bottom: 1.25rem;">
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาคู่มือ SOP, วัตถุดิบ, ขั้นตอนการทอด, ซอส..." />
+          <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาคู่มือ SOP, รหัส SOP-OPS, ตารางเวลาทอด, การเคลมไรเดอร์, ซอส..." />
         </div>
       </div>
 
@@ -110,12 +114,13 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/heic2any.min.js?v=26"></script>
-  <script src="js/data.js?v=26"></script>
-  <script src="js/auth.js?v=26"></script>
-  <script src="js/timer.js?v=26"></script>
-  <script src="js/calculator.js?v=26"></script>
-  <script src="js/cms.js?v=26"></script>
-  <script src="js/app.js?v=26"></script>
+  <script src="js/heic2any.min.js?v=30"></script>
+  <script src="js/data.js?v=30"></script>
+  <script src="js/auth.js?v=30"></script>
+  <script src="js/timer.js?v=30"></script>
+  <script src="js/calculator.js?v=30"></script>
+  <script src="js/operations.js?v=30"></script>
+  <script src="js/cms.js?v=30"></script>
+  <script src="js/app.js?v=30"></script>
 </body>
 </html>
