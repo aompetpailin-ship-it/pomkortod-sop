@@ -1649,3 +1649,1142 @@ function updateSopSellingPrice(sopId, newPriceVal) {
     if (typeof showToast === "function") showToast("💰 อัปเดตราคาขายและคำนวณ % Food Cost แล้ว");
   }
 }
+
+// =========================================================================
+// 5️⃣ ระบบแผนผังจัดเก็บตู้เย็น 2 ประตู (Interactive Fridge Plan) + เช็กลิสต์ตรวจตู้เย็นรายวัน + พิมพ์สติกเกอร์ Fast-Tick 12 ดวง/A4
+// =========================================================================
+
+let activeFridgeSubTab = "diagram"; // 'diagram' | 'checklist' | 'stickers'
+let selectedFridgeId = "chiller-1"; // 'chiller-1' | 'chiller-2'
+let selectedStickerColorTheme = "blue"; // 'blue' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' | 'usefirst'
+
+const DEFAULT_FRIDGE_PLANS = {
+  "chiller-1": {
+    id: "chiller-1",
+    title: "ตู้ที่ 1: ตู้แช่เย็น 2 ประตู (Chiller วัตถุดิบสด / ผัก / ของหมักดอง / เครื่องดื่ม)",
+    tempRange: "1°C – 4°C (ห้ามเกิน 5°C)",
+    posterImage: "assets/fridge-plan-diagram.png",
+    leftDoorTitle: "ประตูซ้าย : ฝั่งวัตถุดิบเตรียม / ใช้บ่อย (High Frequency & Mise en place)",
+    rightDoorTitle: "ประตูขวา : ฝั่งสต็อกสำรอง / ของหมักดอง (Bulk Stock & Pickled)",
+    shelves: [
+      {
+        level: 1,
+        leftZoneTitle: "ชั้น 1 บนสุด : พร้อมเสิร์ฟ / หยิบง่าย",
+        rightZoneTitle: "ชั้น 1 บนสุด : เครื่องดื่มกระป๋อง",
+        leftItems: [
+          {
+            id: "f1-l1-1",
+            icon: "🥢",
+            name: "กิมจิ แพ็คถ้วยเล็ก + ถ้วยใหญ่",
+            badge: "เรียง FIFO",
+            container: "ถ้วยแพ็คพร้อมเสิร์ฟปิดฝาสนิท",
+            method: "วางเรียงตามระบบ FIFO (ของแพ็คก่อนไว้หน้า ของใหม่ไว้หลัง) ชั้นบนหยิบไวสุด ไม่ต้องก้ม"
+          },
+          {
+            id: "f1-l1-2",
+            icon: "🧊",
+            name: "ไชเท้าดอง แพ็คถ้วยเล็ก + ถ้วยใหญ่",
+            badge: "เรียง FIFO",
+            container: "ถ้วยแพ็คพร้อมเสิร์ฟปิดฝาสนิท",
+            method: "วางเรียงตามระบบ FIFO (ของแพ็คก่อนไว้หน้า ของใหม่ไว้หลัง) หยิบลงถุงเดลิเวอรีได้ทันที"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f1-r1-1",
+            icon: "🥤",
+            name: "โค้กกระป๋อง",
+            badge: "เรียงแถวแนวลึก",
+            container: "กระป๋องอลูมิเนียม",
+            method: "เรียงเป็นแถวตอนลึก รับไอเย็นสม่ำเสมอ หยิบเติมง่าย ไม่กระทบต่อการไหลของลมแอร์"
+          }
+        ]
+      },
+      {
+        level: 2,
+        leftZoneTitle: "ชั้น 2 : วัตถุดิบเตรียมเสร็จ (Mise en place)",
+        rightZoneTitle: "ชั้น 2 : กล่องตักเสิร์ฟหลัก (Daily Use)",
+        leftItems: [
+          {
+            id: "f1-l2-1",
+            icon: "🌿",
+            name: "ต้นหอม ซอยแล้ว",
+            badge: "กล่องมีตะแกรงรองน้ำ",
+            container: "กล่อง Food Grade มีตะแกรงรองก้นกล่อง + ทิชชู่ซับน้ำ",
+            method: "ใส่กล่อง Food Grade ปิดสนิท ใส่แผ่นตะแกรงรองก้นกล่องและเปลี่ยนกระดาษทิชชู่ซับน้ำทุกเย็น กันน้ำผักนองจนเน่าเละ"
+          },
+          {
+            id: "f1-l2-2",
+            icon: "🧅",
+            name: "หอมใหญ่ หั่นแล้ว",
+            badge: "กล่องปิดสนิท",
+            container: "กล่อง Food Grade ปิดฝาล็อกสนิท",
+            method: "ใส่กล่อง Food Grade ปิดสนิท ติดสติกเกอร์ระบุวันที่หั่นและวันหมดอายุชัดเจน"
+          },
+          {
+            id: "f1-l2-3",
+            icon: "🍄",
+            name: "เห็ดเข็มทอง หั่นแต่งโคนแล้ว",
+            badge: "กล่องซับทิชชู่",
+            container: "กล่อง Food Grade รองและคลุมทิชชู่ฟู้ดเกรด",
+            method: "รองทิชชู่ซับอาหารฟู้ดเกรดใต้กล่องและคลุมด้านบน ปิดฝาเพื่อคุมไม่ให้เห็ดดูดความชื้นจนเปลี่ยนเป็นสีน้ำตาล (เปลี่ยนทิชชู่ทุกเย็น)"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f1-r2-1",
+            icon: "🌶️",
+            name: "กิมจิ แบบใส่ Superlock",
+            badge: "ล็อกกลิ่น 100%",
+            container: "กล่อง Superlock มีขอบยางซิลิโคน",
+            method: "ล็อกกลิ่นไม่ให้ฟุ้งในตู้ หยิบออกมาตักแบ่งได้สะดวกตามรอบการทำงาน (เช็ดคราบน้ำหมักดองรอบขอบยางก่อนปิดล็อกทุกเย็น)"
+          },
+          {
+            id: "f1-r2-2",
+            icon: "💛",
+            name: "ไชเท้าดอง แบบใส่ Superlock",
+            badge: "ล็อกกลิ่น 100%",
+            container: "กล่อง Superlock มีขอบยางซิลิโคน",
+            method: "ล็อกกลิ่นและคงความกรอบ หยิบออกมาตักแพ็คถ้วยตามรอบการทำงาน เช็ดขอบยางกล่องให้สะอาดเสมอ"
+          }
+        ]
+      },
+      {
+        level: 3,
+        leftZoneTitle: "ชั้น 3 : วัตถุดิบสดพร้อมปรุง / บอบบาง",
+        rightZoneTitle: "ชั้น 3 : วัตถุดิบพร้อมปรุง / กึ่งสำเร็จรูป",
+        leftItems: [
+          {
+            id: "f1-l3-1",
+            icon: "🥚",
+            name: "เต้าหู้หลอด",
+            badge: "ห้ามซ้อนเกิน 2 ชั้น",
+            container: "ถาดเรียบเรียงแนวราบ",
+            method: "วางนอนราบเป็นระเบียบ ห้ามวางซ้อนเกิน 2 ชั้น หรือถูกวัตถุดิบหนักทับ เพื่อป้องกันหลอดแตก"
+          },
+          {
+            id: "f1-l3-2",
+            icon: "🍄",
+            name: "เห็ดเข็มทอง แบบแพ็ค",
+            badge: "คงถุงสุญญากาศเดิม",
+            container: "บรรจุภัณฑ์สุญญากาศเดิม",
+            method: "คงบรรจุภัณฑ์สุญญากาศเดิมไว้ หลีกเลี่ยงการโดนลมแอร์เป่าตรงๆ"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f1-r3-1",
+            icon: "🍲",
+            name: "น้ำซุปกิมจิ",
+            badge: "โถมีฝา/วาล์วเท",
+            container: "โถ/กล่อง Food Grade ปิดฝาแน่นหนา",
+            method: "เก็บในภาชนะ Food Grade ปิดฝาแน่นหนา ระบุวันที่ผลิตและวันหมดอายุบนป้ายสติกเกอร์ชัดเจน"
+          },
+          {
+            id: "f1-r3-2",
+            icon: "📦",
+            name: "ไชเท้าดอง แบบถุงซีล (สต็อกสำรอง)",
+            badge: "สต็อกสำรอง",
+            container: "ถุงซีลสุญญากาศจากโรงงาน",
+            method: "วางนอนเรียงซ้อนกันเป็นสต็อกสำรองสำหรับแกะเติมลงกล่อง Superlock ตามระบบ FIFO"
+          }
+        ]
+      },
+      {
+        level: 4,
+        leftZoneTitle: "ชั้น 4 ล่างสุด : ผักสดทั้งต้น / ของหนัก",
+        rightZoneTitle: "ชั้น 4 ล่างสุด : สต็อกหนัก / หมักดอง",
+        leftItems: [
+          {
+            id: "f1-l4-1",
+            icon: "🥬",
+            name: "ต้นหอม แบบต้น",
+            badge: "ห่อกระดาษซับชื้น",
+            container: "ห่อกระดาษอเนกประสงค์หนา + ถุงโปร่ง",
+            method: "ไม่ต้องล้างก่อนแช่ ห่อโคนและลำต้นด้วยกระดาษอเนกประสงค์หนา ใส่ถุงโปร่งกันความชื้นสะสม"
+          },
+          {
+            id: "f1-l4-2",
+            icon: "🧺",
+            name: "หอมใหญ่ แบบเป็นลูก",
+            badge: "ตะกร้าโปร่งมีรูระบาย",
+            container: "ตะกร้าพลาสติกโปร่งระบายอากาศ",
+            method: "ใส่ตะกร้าพลาสติกโปร่งที่มีช่องระบายอากาศ อย่าวางชิดกิมจิหรือกองบนพื้นตู้โดยตรง"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f1-r4-1",
+            icon: "🏋️",
+            name: "กิมจิ แบบลัง (น้ำหนักเยอะ)",
+            badge: "วางติดพื้นตู้",
+            container: "ลังพลาสติก/กล่องสต็อกหนัก",
+            method: "ของหนักที่สุดวางล่างสุดติดพื้นตู้เพื่อความปลอดภัยตามหลัก Ergonomics และป้องกันการตกหล่น"
+          }
+        ]
+      }
+    ]
+  },
+  "chiller-2": {
+    id: "chiller-2",
+    title: "ตู้ที่ 2: ตู้แช่เย็น 2 ประตู (Chiller ไก่หมัก / ไก่สด / ซอสคลุกไก่ & แป้งชุบทอด)",
+    tempRange: "1°C – 4°C (ควบคุมความเย็นเนื้อไก่ ≤ 4°C)",
+    posterImage: "assets/fridge-plan-diagram.png",
+    leftDoorTitle: "ประตูซ้าย : ฝั่งไก่หมักพร้อมทอด / ใช้บ่อยตามรอบ FIFO",
+    rightDoorTitle: "ประตูขวา : ฝั่งสต็อกซอสคลุกไก่ / น้ำเย็นจัดผสมแป้ง",
+    shelves: [
+      {
+        level: 1,
+        leftZoneTitle: "ชั้น 1 บนสุด : ซอสพร้อมทา & เครื่องปรุงแบ่งใช้",
+        rightZoneTitle: "ชั้น 1 บนสุด : น้ำเย็นจัดชุบแป้ง & ท็อปปิ้งคุมชื้น",
+        leftItems: [
+          {
+            id: "f2-l1-1",
+            icon: "🍯",
+            name: "ซอสคลุกไก่พร้อมใช้ (เกาหลี / น้ำปลา / กระเทียม)",
+            badge: "หยิบไว ไม่ต้องก้ม",
+            container: "ขวดบีบ / กล่องตักแบ่ง Food Grade",
+            method: "เรียงตามระบบ FIFO ปิดฝาสนิททุกครั้งหลังตักแบ่งไปสเตชันคลุกซอส"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f2-r1-1",
+            icon: "💧",
+            name: "น้ำเย็นจัดสำหรับผสมแป้งชุบทอด (0°C - 4°C)",
+            badge: "คุมความกรอบแป้ง",
+            container: "เหยือก/ขวดน้ำดื่มแช่เย็นจัด",
+            method: "แช่เตรียมไว้ล่วงหน้าเพื่อให้แป้งแบทเทอร์จับตัวเป็นเกล็ดกรอบฟูสม่ำเสมอ"
+          }
+        ]
+      },
+      {
+        level: 2,
+        leftZoneTitle: "ชั้น 2 : ไก่หมักพร้อมทอดรอบวันนี้ (Ready-to-Fry FIFO)",
+        rightZoneTitle: "ชั้น 2 : ซอสดิป & มายองเนสพร้อมเสิร์ฟ",
+        leftItems: [
+          {
+            id: "f2-l2-1",
+            icon: "🍗",
+            name: "สะโพกไร้กระดูก & น่องไก่หมักพร้อมทอด",
+            badge: "USE FIRST ไว้หน้า",
+            container: "กล่องใส Food Grade ปิดฝาสนิท",
+            method: "ไก่ที่หมักครบเวลาแล้ว เรียงกล่องที่หมักก่อนไว้ด้านหน้าสุด (FIFO) ติดป้าย Prep Label ครบทุกกล่อง"
+          },
+          {
+            id: "f2-l2-2",
+            icon: "🪽",
+            name: "ปีกกลาง & ปีกบนหมักพร้อมทอด",
+            badge: "เรียง FIFO",
+            container: "กล่องใส Food Grade ปิดฝาสนิท",
+            method: "แยกกล่องตามชิ้นส่วนชัดเจน ห้ามซ้อนทับจนบังช่องลมแอร์ (เว้นระยะ 5-10 ซม.)"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f2-r2-1",
+            icon: "🥣",
+            name: "ซอสดิป / ชีสซอส / มายองเนส (กล่อง Superlock)",
+            badge: "ติดป้ายวันหมดอายุ",
+            container: "กล่อง Superlock ปิดสนิท",
+            method: "เช็ดขอบกล่องให้สะอาดก่อนปิดฝา ดึงถุงที่เปิดก่อนมาใช้ด้านหน้าเสมอ"
+          }
+        ]
+      },
+      {
+        level: 3,
+        leftZoneTitle: "ชั้น 3 : ไก่หมักรอเข้าเนื้อ (Resting / Marinating Batch)",
+        rightZoneTitle: "ชั้น 3 : โถสต็อกซอสเคี่ยวสำเร็จสำรอง",
+        leftItems: [
+          {
+            id: "f2-l3-1",
+            icon: "⏳",
+            name: "กล่องไก่หมักรอบใหม่ (รอครบเวลาหมัก 4-12 ชม.)",
+            badge: "ห้ามหยิบข้ามรอบ",
+            container: "กล่องหมักขนาดมาตรฐานปิดฝาล็อก",
+            method: "แยกชั้นออกจากไก่พร้อมทอดชั้น 2 เพื่อป้องกันพนักงานหยิบไก่ที่ยังหมักไม่เข้าเนื้อไปทอดก่อน"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f2-r3-1",
+            icon: "🫙",
+            name: "โถสต็อกซอสเกาหลี & ซอสน้ำปลาเคี่ยวสำเร็จ",
+            badge: "พักเย็นก่อนแช่",
+            container: "โถ Food Grade มีฝาล็อก",
+            method: "ต้องพักซอสให้คลายร้อนสนิทก่อนนำเข้าตู้เย็นเพื่อไม่ให้อุณหภูมิตู้พุ่งเกิน 4°C"
+          }
+        ]
+      },
+      {
+        level: 4,
+        leftZoneTitle: "ชั้น 4 ล่างสุด : เนื้อไก่สดรอหมัก / กำลังละลายน้ำแข็ง (Raw Zone)",
+        rightZoneTitle: "ชั้น 4 ล่างสุด : แกลลอนซอสหนัก / สต็อกสำรอง",
+        leftItems: [
+          {
+            id: "f2-l4-1",
+            icon: "🥩",
+            name: "เนื้อไก่สดรอหมัก / ถาดละลายน้ำแข็ง",
+            badge: "ชั้นล่างสุดเท่านั้น!",
+            container: "ถาดลึกพร้อมตะแกรงรองน้ำเลือดไก่",
+            method: "กฎเหล็ก Food Safety: เนื้อสัตว์ดิบต้องอยู่ชั้นล่างสุดเสมอ เพื่อป้องกันน้ำเลือดไก่หยดปนเปื้อนลงใส่วัตถุดิบอื่นเด็ดขาด"
+          }
+        ],
+        rightItems: [
+          {
+            id: "f2-r4-1",
+            icon: "🛢️",
+            name: "ถัง/แกลลอนซอสขนาดใหญ่ (น้ำหนักมาก)",
+            badge: "วางติดพื้นตู้",
+            container: "แกลลอน/ถัง Food Grade",
+            method: "วางชั้นล่างสุดตามหลัก Ergonomics ยกเข้า-ออกปลอดภัย ไม่เสี่ยงตกหล่น"
+          }
+        ]
+      }
+    ]
+  }
+};
+
+function getFridgePlansData() {
+  const local = localStorage.getItem("PKT_FRIDGE_PLANS");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed && parsed["chiller-1"]) return parsed;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_FRIDGE_PLANS));
+}
+
+function saveFridgePlansData(plans) {
+  localStorage.setItem("PKT_FRIDGE_PLANS", JSON.stringify(plans));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "fridge_plans", plans);
+  }
+}
+
+function getFridgeChecklistLogs() {
+  const local = localStorage.getItem("PKT_FRIDGE_DAILY_LOGS");
+  if (local) {
+    try {
+      return JSON.parse(local);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return {};
+}
+
+function saveFridgeChecklistLogs(logs) {
+  localStorage.setItem("PKT_FRIDGE_DAILY_LOGS", JSON.stringify(logs));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "fridge_daily_logs", logs);
+  }
+}
+
+function getFridgeDailyRecord(branchCode, dateStr, fridgeId) {
+  const all = getFridgeChecklistLogs();
+  const key = `${branchCode}_${dateStr}_${fridgeId}`;
+  if (all[key]) return all[key];
+  return {
+    branchCode,
+    dateStr,
+    fridgeId,
+    opening: {
+      checkTime: "09:00",
+      tempC: "3.0",
+      tempPass: true,
+      lidsClosed: false,
+      fifoRestocked: false,
+      waterWiped: false,
+      inspector: ""
+    },
+    closing: {
+      checkTime: "21:30",
+      tempC: "3.2",
+      expiryChecked: false,
+      fifoPulledFront: false,
+      gasketAndDoorClosed: false,
+      paperTowelChanged: false,
+      inspector: "",
+      supervisor: ""
+    }
+  };
+}
+
+function renderFridgeManagementView() {
+  const container = document.getElementById("sopContentArea");
+  if (!container) return;
+
+  const plans = getFridgePlansData();
+  const currentFridge = plans[selectedFridgeId] || plans["chiller-1"];
+
+  let html = `
+    <div class="sop-detail-view">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;" class="no-print">
+        <div>
+          <span class="sop-category-tag" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">🧊 COMMERCIAL REFRIGERATOR SOP • FIFO & FOOD SAFETY</span>
+          <h2 style="font-size: 1.6rem; color: #0f172a; font-weight: 800; margin-top: 0.25rem;">
+            ผังจัดวางของในตู้เย็น 2 ประตู, เช็กลิสต์ตรวจตู้เย็น & พิมพ์สติกเกอร์ Prep Label
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">
+            ออกแบบตาม 3 ปัจจัยหลัก: ความปลอดภัยทางอาหาร (Food Safety & FIFO), การไหลเวียนความเย็น (1°C – 4°C), และความเร็วในการหยิบใช้งาน (Ergonomics)
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="action-btn btn-primary" onclick="window.print()" style="width: auto; padding: 0.6rem 1.2rem; background: #0f172a;">
+            🖨️ พิมพ์หน้านี้ลง A4 (${activeFridgeSubTab === 'stickers' ? 'สติกเกอร์ 12 ดวง' : 'ผังแปะหน้าตู้เย็น'})
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-Navigation Tabs -->
+      <div class="ops-tabs-bar no-print">
+        <button class="ops-tab-btn ${activeFridgeSubTab === 'diagram' ? 'active' : ''}" onclick="switchFridgeSubTab('diagram')">
+          🧊 1. ผังจัดวางตู้เย็น 2 ประตู (Interactive + พิมพ์แปะหน้าตู้)
+        </button>
+        <button class="ops-tab-btn ${activeFridgeSubTab === 'checklist' ? 'active' : ''}" onclick="switchFridgeSubTab('checklist')">
+          ✅ 2. เช็กลิสต์ตรวจตู้เย็นประจำวัน (กะเปิดร้าน & กะปิดร้าน)
+        </button>
+        <button class="ops-tab-btn ${activeFridgeSubTab === 'stickers' ? 'active' : ''}" onclick="switchFridgeSubTab('stickers')">
+          🏷️ 3. พิมพ์สติกเกอร์แปะกล่อง (Fast-Tick 12 ดวง/หน้า A4)
+        </button>
+      </div>
+
+      <div id="fridgeModuleContentArea"></div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  renderActiveFridgeSubTabContent(currentFridge);
+}
+
+function switchFridgeSubTab(tab) {
+  activeFridgeSubTab = tab;
+  renderFridgeManagementView();
+}
+
+function switchSelectedFridgePlan(fridgeId) {
+  selectedFridgeId = fridgeId;
+  renderFridgeManagementView();
+}
+
+function renderActiveFridgeSubTabContent(currentFridge) {
+  const area = document.getElementById("fridgeModuleContentArea");
+  if (!area) return;
+
+  if (activeFridgeSubTab === "diagram") {
+    renderFridgeDiagramTab(area, currentFridge);
+  } else if (activeFridgeSubTab === "checklist") {
+    renderFridgeDailyChecklistTab(area);
+  } else if (activeFridgeSubTab === "stickers") {
+    renderFridgeBlankStickersTab(area);
+  }
+}
+
+function renderFridgeDiagramTab(area, currentFridge) {
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
+
+  // รวบรวมรายการทั้งหมดในตู้มาสร้างตารางสรุปรายละเอียดด้านล่าง
+  const allItemsFlat = [];
+  (currentFridge.shelves || []).forEach(sh => {
+    (sh.leftItems || []).forEach(it => {
+      allItemsFlat.push({ ...it, posLabel: `ฝั่งซ้าย ชั้น ${sh.level} (${sh.level === 1 ? 'บนสุด' : sh.level === 4 ? 'ล่างสุด' : 'กลาง'})` });
+    });
+    (sh.rightItems || []).forEach(it => {
+      allItemsFlat.push({ ...it, posLabel: `ฝั่งขวา ชั้น ${sh.level} (${sh.level === 1 ? 'บนสุด' : sh.level === 4 ? 'ล่างสุด' : 'กลาง'})` });
+    });
+  });
+
+  area.innerHTML = `
+    <!-- ตัวเลือกสลับตู้ที่ 1 / ตู้ที่ 2 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;" class="no-print">
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <button class="action-btn ${selectedFridgeId === 'chiller-1' ? 'btn-primary' : 'btn-secondary'}" onclick="switchSelectedFridgePlan('chiller-1')" style="width: auto; padding: 0.55rem 1.15rem;">
+          🥬 ตู้ที่ 1: ผักสด / กิมจิ / ไชเท้าดอง / ซุปกิมจิ / โค้ก (ตาม PDF)
+        </button>
+        <button class="action-btn ${selectedFridgeId === 'chiller-2' ? 'btn-primary' : 'btn-secondary'}" onclick="switchSelectedFridgePlan('chiller-2')" style="width: auto; padding: 0.55rem 1.15rem;">
+          🍗 ตู้ที่ 2: ไก่หมัก / ไก่สด / ซอสคลุกไก่ & แป้งชุบทอด
+        </button>
+      </div>
+
+      ${isAdmin ? `
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="action-btn btn-secondary" onclick="openAddFridgeShelfItemModal('${currentFridge.id}')" style="width: auto; padding: 0.5rem 1rem; border-color: #f59e0b; background: #fffbeb; color: #b45309; font-weight: 800;">
+            ➕ เพิ่มวัตถุดิบลงชั้นวาง
+          </button>
+          <button class="action-btn btn-secondary" onclick="resetFridgePlansToDefault()" style="width: auto; padding: 0.5rem 0.9rem; color: #dc2626;">
+            🔄 รีเซ็ตผังเริ่มต้น
+          </button>
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- บอร์ดผังตู้เย็น 2 ประตู (Visual 2-Door Commercial Chiller Blueprint) -->
+    <div class="cheat-sheet-board" style="border-color: #0284c7; margin-bottom: 1.5rem;">
+      <div class="cheat-header" style="background: linear-gradient(135deg, #0f172a, #0369a1); border-bottom: 4px solid #38bdf8;">
+        <div>
+          <span class="cheat-badge" style="background: #38bdf8; color: #0f172a;">REFRIGERATOR PLAN DIAGRAM (FIFO & FOOD SAFETY)</span>
+          <h3 style="font-size: 1.45rem;">${escapeHtml(currentFridge.title)}</h3>
+          <p style="color: #e0f2fe; font-size: 0.86rem; margin-top: 0.25rem;">
+            💡 แตะที่กล่องวัตถุดิบแต่ละชิ้นเพื่อดูวิธีเก็บรักษาและภาชนะที่ต้องใช้ • เว้นระยะห่างจากช่องลมแอร์ 5–10 ซม. เสมอ
+          </p>
+        </div>
+        <div class="cheat-temp-box" style="background: #0284c7; border-color: #7dd3fc;">
+          <div style="font-size: 0.75rem; font-weight: 700;">อุณหภูมิมาตรฐาน</div>
+          <div style="font-size: 1.55rem; font-weight: 900;">1°C – 4°C</div>
+          <div style="font-size: 0.72rem; color: #bae6fd;">ห้ามเกิน 5°C เด็ดขาด</div>
+        </div>
+      </div>
+
+      <div class="cheat-body" style="background: #f0f9ff; padding: 1.25rem;">
+        <!-- หัวประตูซ้าย & ประตูขวา -->
+        <div class="fridge-doors-header-grid">
+          <div class="fridge-door-banner left-door">
+            <span>🚪 ${escapeHtml(currentFridge.leftDoorTitle)}</span>
+            <span style="font-size: 0.75rem; background: #dcfce7; color: #166534; padding: 0.15rem 0.55rem; border-radius: 10px;">หยิบไว / ใช้บ่อย</span>
+          </div>
+          <div class="fridge-door-banner right-door">
+            <span>🚪 ${escapeHtml(currentFridge.rightDoorTitle)}</span>
+            <span style="font-size: 0.75rem; background: #fef3c7; color: #92400e; padding: 0.15rem 0.55rem; border-radius: 10px;">สต็อกสำรอง / ล็อกกลิ่น</span>
+          </div>
+        </div>
+
+        <!-- ชั้นวาง 1 ถึง 4 -->
+        <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+          ${(currentFridge.shelves || []).map(shelf => `
+            <div class="fridge-shelf-row">
+              <!-- ฝั่งประตูซ้าย -->
+              <div class="fridge-shelf-cell left-cell">
+                <div class="fridge-shelf-label">
+                  <span>📌 ${escapeHtml(shelf.leftZoneTitle)}</span>
+                  ${isAdmin ? `<button class="no-print" onclick="openAddFridgeShelfItemModal('${currentFridge.id}', ${shelf.level}, 'left')" style="background:none; border:none; color:#0284c7; font-size:0.76rem; font-weight:800; cursor:pointer;">+ เพิ่มซ้ายชั้น ${shelf.level}</button>` : ''}
+                </div>
+                <div class="fridge-items-wrap">
+                  ${(shelf.leftItems || []).map(item => `
+                    <div class="fridge-item-box" onclick="openFridgeItemDetailModal('${currentFridge.id}', ${shelf.level}, 'left', '${item.id}')">
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+                        <span style="font-size: 1.35rem;">${item.icon || '📦'}</span>
+                        <span class="fridge-fifo-pill">${escapeHtml(item.badge || 'FIFO')}</span>
+                      </div>
+                      <div class="fridge-item-title">${escapeHtml(item.name)}</div>
+                      <div class="fridge-item-sub">${escapeHtml(item.container || '')}</div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+
+              <!-- ฝั่งประตูขวา -->
+              <div class="fridge-shelf-cell right-cell">
+                <div class="fridge-shelf-label">
+                  <span>📌 ${escapeHtml(shelf.rightZoneTitle)}</span>
+                  ${isAdmin ? `<button class="no-print" onclick="openAddFridgeShelfItemModal('${currentFridge.id}', ${shelf.level}, 'right')" style="background:none; border:none; color:#0284c7; font-size:0.76rem; font-weight:800; cursor:pointer;">+ เพิ่มขวาชั้น ${shelf.level}</button>` : ''}
+                </div>
+                <div class="fridge-items-wrap">
+                  ${(shelf.rightItems || []).map(item => `
+                    <div class="fridge-item-box" onclick="openFridgeItemDetailModal('${currentFridge.id}', ${shelf.level}, 'right', '${item.id}')">
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+                        <span style="font-size: 1.35rem;">${item.icon || '📦'}</span>
+                        <span class="fridge-fifo-pill" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">${escapeHtml(item.badge || 'Stock')}</span>
+                      </div>
+                      <div class="fridge-item-title">${escapeHtml(item.name)}</div>
+                      <div class="fridge-item-sub">${escapeHtml(item.container || '')}</div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <!-- กฎเหล็กประจำตู้เย็น 3 ข้อ (พิมพ์แปะคู่กับผัง) -->
+        <div style="margin-top: 1.25rem; background: #ffffff; border: 2px solid #0f172a; border-radius: 14px; padding: 1rem 1.25rem;">
+          <h4 style="font-size: 1rem; font-weight: 900; color: #dc2626; margin-bottom: 0.5rem;">
+            🚨 กฎเหล็กประจำตู้เย็นสำหรับพนักงาน (พิมพ์แปะคู่กับผังหน้าตู้เย็น)
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; font-size: 0.88rem;">
+            <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 0.6rem 0.85rem; border-radius: 8px;">
+              <strong>1. First-In, First-Out (FIFO):</strong><br>วางของใหม่ไว้ด้านใน นำของเก่ามาไว้ด้านหน้าเสมอ ห้ามหยิบข้ามคิว
+            </div>
+            <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 0.6rem 0.85rem; border-radius: 8px;">
+              <strong>2. Day Labeling (ติดป้ายทุกกล่อง):</strong><br>ติดสติกเกอร์ระบุ "ชื่อวัตถุดิบ + วันที่เปิด/หั่น + วันหมดอายุ + ผู้เตรียม" บนกล่องและถุงทุกชิ้น
+            </div>
+            <div style="background: #fffbeb; border-left: 4px solid #d97706; padding: 0.6rem 0.85rem; border-radius: 8px;">
+              <strong>3. Airflow Clearance (เว้นช่องลม 5–10 ซม.):</strong><br>เว้นระยะห่างจากช่องลมและผนังตู้เย็นอย่างน้อย 5–10 ซม. ห้ามวางของอัดแน่นจนบังทิศทางลมเย็น
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ภาพ Infographic แผนผังตู้เย็น 2 ประตู + ตารางสรุปรายละเอียดวิธีเก็บรักษา -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: start; margin-bottom: 1.5rem;">
+      ${selectedFridgeId === 'chiller-1' ? `
+        <div style="background: #ffffff; border: 2px solid var(--border-color); border-radius: 16px; padding: 1.25rem; text-align: center;">
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 0.6rem;">
+            🖼️ ภาพ Infographic แผนผังตู้เย็น 2 ประตู (คลิกเพื่อขยายใหญ่ / พิมพ์แปะหน้าตู้)
+          </h4>
+          <img src="assets/fridge-plan-diagram.png" alt="ผังจัดวางตู้เย็น 2 ประตู" style="width: 100%; max-width: 480px; border-radius: 12px; border: 1px solid var(--border-color); cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.08);" onclick="openImageLightbox('assets/fridge-plan-diagram.png', 'ผังจัดวางตู้เย็น 2 ประตู (Chiller 1°C - 4°C)')" onerror="this.style.display='none'" />
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+            คลิกที่รูปเพื่อดูขนาดเต็มจอ หรือกดปุ่ม "🖨️ พิมพ์หน้านี้ลง A4" ด้านบนเพื่อพิมพ์แปะหน้าตู้เย็นจริง
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.25rem;">
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: #b45309; margin-bottom: 0.75rem;">
+          📋 รายละเอียดตำแหน่งและวิธีเก็บรักษาวัตถุดิบแต่ละชนิด (${allItemsFlat.length} รายการ)
+        </h4>
+        <div style="overflow-x: auto;">
+          <table class="matrix-table-large" style="font-size: 0.88rem;">
+            <thead>
+              <tr>
+                <th>วัตถุดิบ</th>
+                <th>ตำแหน่งที่วาง</th>
+                <th>วิธีการจัดเก็บเพื่อยืดอายุและคงคุณภาพ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allItemsFlat.map(it => `
+                <tr>
+                  <td><strong>${it.icon || ''} ${escapeHtml(it.name)}</strong></td>
+                  <td><span class="pass-pill" style="font-size:0.76rem;">${escapeHtml(it.posLabel)}</span></td>
+                  <td>${escapeHtml(it.method)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openFridgeItemDetailModal(fridgeId, shelfLevel, side, itemId) {
+  const plans = getFridgePlansData();
+  const fridge = plans[fridgeId];
+  if (!fridge) return;
+  const shelf = (fridge.shelves || []).find(s => s.level === shelfLevel);
+  if (!shelf) return;
+  const list = side === "left" ? shelf.leftItems : shelf.rightItems;
+  const item = (list || []).find(i => i.id === itemId);
+  if (!item) return;
+
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
+
+  const modalHtml = `
+    <div class="modal-overlay" id="fridgeItemModal" onclick="closeModal('fridgeItemModal')">
+      <div class="modal-card" style="max-width: 540px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <span style="font-size: 0.76rem; font-weight: 800; color: #0284c7;">${side === 'left' ? 'ประตูซ้าย' : 'ประตูขวา'} • ชั้นที่ ${shelfLevel}</span>
+            <h3 style="font-size: 1.3rem; color: #0f172a; margin-top: 0.15rem;">${item.icon || '📦'} ${escapeHtml(item.name)}</h3>
+          </div>
+          <button onclick="closeModal('fridgeItemModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 0.82rem; color: #0369a1; font-weight: 700;">ภาชนะมาตรฐานที่ใช้เก็บ:</div>
+            <div style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.65rem;">${escapeHtml(item.container || '-')}</div>
+            <div style="font-size: 0.82rem; color: #0369a1; font-weight: 700;">วิธีการจัดเก็บเพื่อยืดอายุและคงคุณภาพ (FIFO):</div>
+            <div style="font-size: 0.95rem; color: #1e293b; line-height: 1.55;">${escapeHtml(item.method || '-')}</div>
+          </div>
+
+          ${isAdmin ? `
+            <details style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 0.85rem;">
+              <summary style="font-weight: 800; color: #b45309; cursor: pointer;">✏️ แก้ไขข้อมูลวัตถุดิบชิ้นนี้ (เฉพาะ Admin)</summary>
+              <div style="margin-top: 0.85rem;">
+                <div class="form-group">
+                  <label class="form-label">ชื่อวัตถุดิบ</label>
+                  <input type="text" id="editFridgeItemName" class="form-input" value="${escapeHtml(item.name)}" />
+                </div>
+                <div style="display: grid; grid-template-columns: 90px 1fr; gap: 0.6rem;">
+                  <div class="form-group">
+                    <label class="form-label">ไอคอน</label>
+                    <input type="text" id="editFridgeItemIcon" class="form-input" value="${escapeHtml(item.icon || '📦')}" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">ป้ายกำกับสั้น (Badge)</label>
+                    <input type="text" id="editFridgeItemBadge" class="form-input" value="${escapeHtml(item.badge || 'FIFO')}" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ภาชนะที่ใช้เก็บ</label>
+                  <input type="text" id="editFridgeItemContainer" class="form-input" value="${escapeHtml(item.container || '')}" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">วิธีการจัดเก็บและดูแลรักษา</label>
+                  <textarea id="editFridgeItemMethod" class="form-textarea" rows="3">${escapeHtml(item.method || '')}</textarea>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 0.5rem;">
+                  <button type="button" class="action-btn btn-secondary" onclick="deleteFridgeShelfItem('${fridgeId}', ${shelfLevel}, '${side}', '${item.id}')" style="width: auto; color: #dc2626; border-color: #fecaca; background: #fef2f2;">
+                    🗑️ ลบออกจากชั้นนี้
+                  </button>
+                  <button type="button" class="action-btn btn-primary" onclick="saveEditedFridgeShelfItem('${fridgeId}', ${shelfLevel}, '${side}', '${item.id}')" style="width: auto;">
+                    💾 บันทึกการแก้ไข
+                  </button>
+                </div>
+              </div>
+            </details>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const existing = document.getElementById("fridgeItemModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function saveEditedFridgeShelfItem(fridgeId, shelfLevel, side, itemId) {
+  const plans = getFridgePlansData();
+  const fridge = plans[fridgeId];
+  if (!fridge) return;
+  const shelf = (fridge.shelves || []).find(s => s.level === shelfLevel);
+  if (!shelf) return;
+  const list = side === "left" ? shelf.leftItems : shelf.rightItems;
+  const item = (list || []).find(i => i.id === itemId);
+  if (!item) return;
+
+  item.name = document.getElementById("editFridgeItemName")?.value.trim() || item.name;
+  item.icon = document.getElementById("editFridgeItemIcon")?.value.trim() || "📦";
+  item.badge = document.getElementById("editFridgeItemBadge")?.value.trim() || "FIFO";
+  item.container = document.getElementById("editFridgeItemContainer")?.value.trim() || "";
+  item.method = document.getElementById("editFridgeItemMethod")?.value.trim() || "";
+
+  saveFridgePlansData(plans);
+  closeModal("fridgeItemModal");
+  renderFridgeManagementView();
+  if (typeof showToast === "function") showToast("✅ อัปเดตข้อมูลวัตถุดิบในผังตู้เย็นเรียบร้อยแล้ว!");
+}
+
+function deleteFridgeShelfItem(fridgeId, shelfLevel, side, itemId) {
+  if (!confirm("ต้องการลบวัตถุดิบชิ้นนี้ออกจากชั้นวางใช่หรือไม่?")) return;
+  const plans = getFridgePlansData();
+  const fridge = plans[fridgeId];
+  if (!fridge) return;
+  const shelf = (fridge.shelves || []).find(s => s.level === shelfLevel);
+  if (!shelf) return;
+  if (side === "left") {
+    shelf.leftItems = (shelf.leftItems || []).filter(i => i.id !== itemId);
+  } else {
+    shelf.rightItems = (shelf.rightItems || []).filter(i => i.id !== itemId);
+  }
+  saveFridgePlansData(plans);
+  closeModal("fridgeItemModal");
+  renderFridgeManagementView();
+  if (typeof showToast === "function") showToast("🗑️ ลบรายการออกจากชั้นวางแล้ว");
+}
+
+function openAddFridgeShelfItemModal(fridgeId, defaultLevel = 1, defaultSide = "left") {
+  const modalHtml = `
+    <div class="modal-overlay" id="addFridgeItemModal" onclick="closeModal('addFridgeItemModal')">
+      <div class="modal-card" style="max-width: 520px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #0284c7;">➕ เพิ่มวัตถุดิบลงในแผนผังตู้เย็น</h3>
+          <button onclick="closeModal('addFridgeItemModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleAddFridgeShelfItem(event, '${fridgeId}')">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">ฝั่งประตูตู้เย็น</label>
+              <select id="newFridgeSide" class="form-select">
+                <option value="left" ${defaultSide === 'left' ? 'selected' : ''}>🚪 ประตูซ้าย (หยิบใช้บ่อย)</option>
+                <option value="right" ${defaultSide === 'right' ? 'selected' : ''}>🚪 ประตูขวา (สต็อก/ของดอง)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ชั้นวาง (1 - 4)</label>
+              <select id="newFridgeLevel" class="form-select">
+                <option value="1" ${defaultLevel === 1 ? 'selected' : ''}>ชั้น 1 (บนสุด)</option>
+                <option value="2" ${defaultLevel === 2 ? 'selected' : ''}>ชั้น 2</option>
+                <option value="3" ${defaultLevel === 3 ? 'selected' : ''}>ชั้น 3</option>
+                <option value="4" ${defaultLevel === 4 ? 'selected' : ''}>ชั้น 4 (ล่างสุด)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 90px 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">ไอคอน</label>
+              <input type="text" id="newFridgeIcon" class="form-input" value="🥗" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ชื่อวัตถุดิบ *</label>
+              <input type="text" id="newFridgeName" class="form-input" placeholder="เช่น กะหล่ำปลีซอย" required />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">ป้ายกำกับสั้น (Badge)</label>
+              <input type="text" id="newFridgeBadge" class="form-input" value="เรียง FIFO" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ภาชนะที่ใช้เก็บ</label>
+              <input type="text" id="newFridgeContainer" class="form-input" placeholder="เช่น กล่อง Food Grade ปิดสนิท" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">วิธีการจัดเก็บเพื่อยืดอายุและคงคุณภาพ *</label>
+            <textarea id="newFridgeMethod" class="form-textarea" rows="3" placeholder="ระบุเทคนิคการเก็บรักษา..." required></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('addFridgeItemModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 เพิ่มลงชั้นวาง</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("addFridgeItemModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleAddFridgeShelfItem(event, fridgeId) {
+  event.preventDefault();
+  const plans = getFridgePlansData();
+  const fridge = plans[fridgeId];
+  if (!fridge) return;
+
+  const side = document.getElementById("newFridgeSide")?.value || "left";
+  const level = parseInt(document.getElementById("newFridgeLevel")?.value) || 1;
+  const shelf = (fridge.shelves || []).find(s => s.level === level);
+  if (!shelf) return;
+
+  const newItem = {
+    id: "fitem-" + Date.now(),
+    icon: document.getElementById("newFridgeIcon")?.value.trim() || "📦",
+    name: document.getElementById("newFridgeName")?.value.trim() || "",
+    badge: document.getElementById("newFridgeBadge")?.value.trim() || "FIFO",
+    container: document.getElementById("newFridgeContainer")?.value.trim() || "",
+    method: document.getElementById("newFridgeMethod")?.value.trim() || ""
+  };
+
+  if (side === "left") {
+    shelf.leftItems.push(newItem);
+  } else {
+    shelf.rightItems.push(newItem);
+  }
+
+  saveFridgePlansData(plans);
+  closeModal("addFridgeItemModal");
+  renderFridgeManagementView();
+  if (typeof showToast === "function") showToast(`✅ เพิ่ม "${newItem.name}" ลงในผังตู้เย็นเรียบร้อยแล้ว!`);
+}
+
+function resetFridgePlansToDefault() {
+  if (!confirm("ต้องการรีเซ็ตผังตู้เย็นทั้ง 2 ตู้กลับเป็นค่ามาตรฐานตามเอกสารคู่มือใช่หรือไม่?")) return;
+  saveFridgePlansData(DEFAULT_FRIDGE_PLANS);
+  renderFridgeManagementView();
+  if (typeof showToast === "function") showToast("🔄 รีเซ็ตแผนผังตู้เย็นกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว");
+}
+
+// =========================================================================
+// แท็บ 2: เช็กลิสต์ตรวจตู้เย็นประจำวันออนไลน์ (Daily Fridge Opening & Closing Checklist)
+// =========================================================================
+
+function renderFridgeDailyChecklistTab(area) {
+  const branches = getBranchesData();
+  const rec = getFridgeDailyRecord(selectedOpsBranch, selectedOpsDate, selectedFridgeId);
+  const openTemp = parseFloat(rec.opening.tempC);
+  const closeTemp = parseFloat(rec.closing.tempC);
+  const isOpenTempAlert = !isNaN(openTemp) && (openTemp > 4 || openTemp < 0);
+  const isCloseTempAlert = !isNaN(closeTemp) && (closeTemp > 4 || closeTemp < 0);
+
+  area.innerHTML = `
+    <!-- ตัวกรองสาขา วันที่ และตู้เย็น -->
+    <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 800; color: #0369a1; display: block;">สาขาที่ตรวจ</label>
+          <select id="fridgeLogBranchSelect" class="form-select" style="width: auto; font-weight: 800; padding: 0.45rem 0.85rem;" onchange="handleFridgeChecklistFilterChange()">
+            ${branches.map(b => `<option value="${b.code}" ${selectedOpsBranch === b.code ? 'selected' : ''}>🏪 ${b.name}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 800; color: #0369a1; display: block;">วันที่ตรวจ</label>
+          <input type="date" id="fridgeLogDateSelect" class="form-input" style="width: auto; font-weight: 700; padding: 0.4rem 0.75rem;" value="${selectedOpsDate}" onchange="handleFridgeChecklistFilterChange()" />
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 800; color: #0369a1; display: block;">เลือกตู้แช่เย็น</label>
+          <select id="fridgeLogUnitSelect" class="form-select" style="width: auto; font-weight: 800; padding: 0.45rem 0.85rem;" onchange="handleFridgeChecklistFilterChange()">
+            <option value="chiller-1" ${selectedFridgeId === 'chiller-1' ? 'selected' : ''}>🥬 ตู้ที่ 1: ตู้เย็น 2 ประตู (ผัก/กิมจิ/ไชเท้าดอง/โค้ก)</option>
+            <option value="chiller-2" ${selectedFridgeId === 'chiller-2' ? 'selected' : ''}>🍗 ตู้ที่ 2: ตู้แช่ไก่หมัก / ไก่สด / ซอสคลุกไก่</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="background: #ffffff; border: 1.5px solid #0284c7; border-radius: 10px; padding: 0.5rem 0.9rem; font-size: 0.82rem; font-weight: 800; color: #0369a1;">
+        🌡️ เกณฑ์มาตรฐาน: 1°C – 4°C (ห้ามเกิน 5°C)
+      </div>
+    </div>
+
+    ${(openTemp >= 5 || closeTemp >= 5) ? `
+      <div style="background: #fef2f2; border: 2px solid #dc2626; color: #991b1b; border-radius: 12px; padding: 0.9rem 1.2rem; margin-bottom: 1.25rem; font-weight: 800;">
+        🚨 แจ้งเตือนอุณหภูมิตู้เย็นเกิน 5°C! ข้อปฏิบัติบังคับ: ให้ตรวจสอบขอบยางประตูและคอมเพรสเซอร์ทันที ไม่วางของบังพัดลมแอร์ และแจ้งหัวหน้ากะก่อนเริ่มตักวัตถุดิบใช้งาน
+      </div>
+    ` : ''}
+
+    <!-- กะเปิดร้าน & กะปิดร้าน -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+      <!-- 1. กะเปิดร้าน (Opening Checklist) -->
+      <div style="background: #ffffff; border: 2px solid #10b981; border-radius: 16px; padding: 1.35rem; box-shadow: 0 4px 12px rgba(16,185,129,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #d1fae5; padding-bottom: 0.65rem;">
+          <div>
+            <span style="background: #ecfdf5; color: #047857; font-size: 0.74rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 6px;">MORNING SHIFT</span>
+            <h4 style="font-size: 1.15rem; font-weight: 900; color: #065f46; margin-top: 0.2rem;">🌅 1. กะเปิดร้าน (Opening Fridge Check)</h4>
+          </div>
+          <div style="text-align: right;">
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; display: block;">เวลาตรวจ</label>
+            <input type="time" id="fridgeOpenTime" class="form-input" value="${escapeHtml(rec.opening.checkTime || '09:00')}" style="width: 105px; padding: 0.3rem 0.45rem; font-weight: 700;" onchange="saveFridgeDailyChecklistForm(false)" />
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+          <div>
+            <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a;">🌡️ อุณหภูมิหน้าตู้ตอนเปิดร้าน (°C)</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">เกณฑ์มาตรฐาน 1°C – 4°C</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <input type="number" step="0.1" id="fridgeOpenTemp" class="form-input" value="${escapeHtml(rec.opening.tempC)}" style="width: 85px; text-align: center; font-weight: 900; font-size: 1.05rem; color: ${isOpenTempAlert ? '#dc2626' : '#059669'};" oninput="saveFridgeDailyChecklistForm(false)" />
+            <span style="font-weight: 800;">°C</span>
+            <span class="${isOpenTempAlert ? '' : 'pass-pill'}" style="${isOpenTempAlert ? 'background:#fef2f2; color:#dc2626; padding:0.2rem 0.55rem; border-radius:8px; font-weight:800; font-size:0.75rem;' : 'font-size:0.75rem;'}">
+              ${isOpenTempAlert ? '❌ เกินเกณฑ์!' : '✅ ผ่าน'}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeOpenLids" ${rec.opening.lidsClosed ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">📦 ปิดฝากล่องสนิททุกกล่อง (เรียบร้อย)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeOpenFifo" ${rec.opening.fifoRestocked ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🔄 เติมของพร้อมเสิร์ฟชั้นบนสุดตามระบบ FIFO (เรียบร้อย)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeOpenWater" ${rec.opening.waterWiped ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🧽 เช็ดคราบน้ำ / หยดน้ำค้างคืนภายในตู้ (สะอาด)</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="form-label">✍️ ชื่อผู้ตรวจกะเปิดร้าน</label>
+          <input type="text" id="fridgeOpenInspector" class="form-input" placeholder="ระบุชื่อพนักงานผู้ตรวจกะเช้า" value="${escapeHtml(rec.opening.inspector || '')}" onchange="saveFridgeDailyChecklistForm(false)" />
+        </div>
+      </div>
+
+      <!-- 2. กะปิดร้าน (Closing Checklist) -->
+      <div style="background: #ffffff; border: 2px solid #f59e0b; border-radius: 16px; padding: 1.35rem; box-shadow: 0 4px 12px rgba(245,158,11,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #fde68a; padding-bottom: 0.65rem;">
+          <div>
+            <span style="background: #fffbeb; color: #b45309; font-size: 0.74rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 6px;">CLOSING SHIFT</span>
+            <h4 style="font-size: 1.15rem; font-weight: 900; color: #92400e; margin-top: 0.2rem;">🌙 2. กะปิดร้าน (Closing Fridge Check)</h4>
+          </div>
+          <div style="text-align: right;">
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; display: block;">เวลาตรวจ</label>
+            <input type="time" id="fridgeCloseTime" class="form-input" value="${escapeHtml(rec.closing.checkTime || '21:30')}" style="width: 105px; padding: 0.3rem 0.45rem; font-weight: 700;" onchange="saveFridgeDailyChecklistForm(false)" />
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+          <div>
+            <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a;">🌡️ อุณหภูมิหน้าตู้ก่อนปิดร้าน (°C)</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">เกณฑ์มาตรฐาน 1°C – 4°C</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <input type="number" step="0.1" id="fridgeCloseTemp" class="form-input" value="${escapeHtml(rec.closing.tempC)}" style="width: 85px; text-align: center; font-weight: 900; font-size: 1.05rem; color: ${isCloseTempAlert ? '#dc2626' : '#059669'};" oninput="saveFridgeDailyChecklistForm(false)" />
+            <span style="font-weight: 800;">°C</span>
+            <span class="${isCloseTempAlert ? '' : 'pass-pill'}" style="${isCloseTempAlert ? 'background:#fef2f2; color:#dc2626; padding:0.2rem 0.55rem; border-radius:8px; font-weight:800; font-size:0.75rem;' : 'font-size:0.75rem;'}">
+              ${isCloseTempAlert ? '❌ เกินเกณฑ์!' : '✅ ผ่าน'}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeCloseExpiry" ${rec.closing.expiryChecked ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🏷️ เช็ควันหมดอายุทุกกล่อง & คัดสภาพผักสด (ผ่าน)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeCloseFifo" ${rec.closing.fifoPulledFront ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🔄 ดึงของเก่ามาไว้ด้านหน้าตามระบบ FIFO สำหรับพรุ่งนี้เช้า</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeCloseGasket" ${rec.closing.gasketAndDoorClosed ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🚪 เช็คขอบยาง Superlock & ปิดประตูตู้เย็นแน่นสนิท</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.7rem; background: #f8fafc; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+            <input type="checkbox" id="fridgeCloseTowel" ${rec.closing.paperTowelChanged ? 'checked' : ''} onchange="saveFridgeDailyChecklistForm(false)" style="width: 18px; height: 18px;" />
+            <span style="font-weight: 700; font-size: 0.92rem;">🧻 เปลี่ยนทิชชู่ซับน้ำก้นกล่อง (ต้นหอมซอย/เห็ดเข็มทอง) & เทน้ำทิ้ง</span>
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+          <div>
+            <label class="form-label">✍️ ผู้ตรวจกะปิดร้าน</label>
+            <input type="text" id="fridgeCloseInspector" class="form-input" placeholder="ชื่อพนักงาน" value="${escapeHtml(rec.closing.inspector || '')}" onchange="saveFridgeDailyChecklistForm(false)" />
+          </div>
+          <div>
+            <label class="form-label">👑 ผู้จัดการ/หัวหน้ากะ (ตรวจซ้ำ)</label>
+            <input type="text" id="fridgeCloseSupervisor" class="form-input" placeholder="ชื่อหัวหน้ากะ" value="${escapeHtml(rec.closing.supervisor || '')}" onchange="saveFridgeDailyChecklistForm(false)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+      <button class="action-btn btn-primary" onclick="saveFridgeDailyChecklistForm(true)" style="width: auto; padding: 0.75rem 2rem; font-size: 1rem;">
+        💾 บันทึกผลตรวจตู้เย็นประจำวัน (${selectedOpsBranch} • ${selectedOpsDate})
+      </button>
+    </div>
+
+    <!-- จุดตรวจเน้นย้ำเฉพาะวัตถุดิบ (Specific Item Audits) -->
+    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 1.25rem;">
+      <h4 style="font-size: 1.05rem; font-weight: 900; color: #b45309; margin-bottom: 0.6rem;">
+        🔍 จุดตรวจเน้นย้ำเฉพาะวัตถุดิบก่อนปิดร้านทุกวัน (Specific Item Audits)
+      </h4>
+      <ul style="padding-left: 1.25rem; line-height: 1.75; color: #334155; font-size: 0.92rem; margin: 0;">
+        <li><strong>ต้นหอมซอย & เห็ดเข็มทองหั่น:</strong> เปลี่ยนกระดาษทิชชู่ซับน้ำก้นกล่องทุกเย็น เทน้ำส่วนเกินทิ้ง ป้องกันผักเน่าช้ำ</li>
+        <li><strong>กล่อง Superlock (กิมจิ / ไชเท้าดอง):</strong> เช็ดคราบน้ำหมักดองรอบขอบยางกล่องก่อนปิดล็อก เพื่อไม่ให้ยางเสื่อมและกลิ่นเล็ดลอด</li>
+        <li><strong>เต้าหู้หลอด:</strong> ตรวจเช็คว่าไม่มีวัตถุดิบหนักหรือกล่องอื่นวางทับ (ซ้อนไม่เกิน 2 ชั้น)</li>
+        <li><strong>การระบายอากาศ (Airflow):</strong> ตรวจสอบว่าไม่มีสิ่งของวางชิดพัดลมแอร์ด้านบนและผนังตู้ (เว้นระยะอย่างน้อย 5–10 ซม.)</li>
+      </ul>
+    </div>
+  `;
+}
+
+function handleFridgeChecklistFilterChange() {
+  const b = document.getElementById("fridgeLogBranchSelect");
+  const d = document.getElementById("fridgeLogDateSelect");
+  const u = document.getElementById("fridgeLogUnitSelect");
+  if (b) selectedOpsBranch = b.value;
+  if (d) selectedOpsDate = d.value;
+  if (u) selectedFridgeId = u.value;
+  renderFridgeManagementView();
+}
+
+function saveFridgeDailyChecklistForm(showNotification = true) {
+  const all = getFridgeChecklistLogs();
+  const key = `${selectedOpsBranch}_${selectedOpsDate}_${selectedFridgeId}`;
+  const rec = getFridgeDailyRecord(selectedOpsBranch, selectedOpsDate, selectedFridgeId);
+
+  rec.opening.checkTime = document.getElementById("fridgeOpenTime")?.value || "09:00";
+  rec.opening.tempC = document.getElementById("fridgeOpenTemp")?.value || "";
+  const openNum = parseFloat(rec.opening.tempC);
+  rec.opening.tempPass = !isNaN(openNum) && openNum >= 0 && openNum <= 4;
+  rec.opening.lidsClosed = !!document.getElementById("fridgeOpenLids")?.checked;
+  rec.opening.fifoRestocked = !!document.getElementById("fridgeOpenFifo")?.checked;
+  rec.opening.waterWiped = !!document.getElementById("fridgeOpenWater")?.checked;
+  rec.opening.inspector = document.getElementById("fridgeOpenInspector")?.value.trim() || "";
+
+  rec.closing.checkTime = document.getElementById("fridgeCloseTime")?.value || "21:30";
+  rec.closing.tempC = document.getElementById("fridgeCloseTemp")?.value || "";
+  rec.closing.expiryChecked = !!document.getElementById("fridgeCloseExpiry")?.checked;
+  rec.closing.fifoPulledFront = !!document.getElementById("fridgeCloseFifo")?.checked;
+  rec.closing.gasketAndDoorClosed = !!document.getElementById("fridgeCloseGasket")?.checked;
+  rec.closing.paperTowelChanged = !!document.getElementById("fridgeCloseTowel")?.checked;
+  rec.closing.inspector = document.getElementById("fridgeCloseInspector")?.value.trim() || "";
+  rec.closing.supervisor = document.getElementById("fridgeCloseSupervisor")?.value.trim() || "";
+
+  all[key] = rec;
+  saveFridgeChecklistLogs(all);
+
+  if (showNotification) {
+    renderFridgeManagementView();
+    if (typeof showToast === "function") showToast(`✅ บันทึกเช็กลิสต์ตรวจตู้เย็น (${selectedOpsBranch}) เรียบร้อยแล้ว!`);
+  }
+}
+
+// =========================================================================
+// แท็บ 3: เทมเพลตฟอร์มสติกเกอร์เปล่า (Fast-Tick Label) 12 ดวง/หน้า A4 สำหรับสั่งพิมพ์แล้วให้พนักงานเขียนวันที่เอง
+// =========================================================================
+
+function renderFridgeBlankStickersTab(area) {
+  const themeMap = {
+    blue: { label: "🔵 มาตรฐานสีน้ำเงิน (Standard Daily Prep)", headerBg: "#1d4ed8", borderColor: "#1d4ed8", badgeText: "FOOD PREP STICKER" },
+    usefirst: { label: "🟠 ป้ายเตือนใช้ก่อน (USE FIRST - FIFO)", headerBg: "#ea580c", borderColor: "#ea580c", badgeText: "⚡ USE FIRST (ใช้ก่อน!)" },
+    mon: { label: "🟡 วันจันทร์ (สีเหลือง)", headerBg: "#ca8a04", borderColor: "#eab308", badgeText: "PREP STICKER • จันทร์" },
+    tue: { label: "🩷 วันอังคาร (สีชมพู)", headerBg: "#db2777", borderColor: "#ec4899", badgeText: "PREP STICKER • อังคาร" },
+    wed: { label: "🟢 วันพุธ (สีเขียว)", headerBg: "#15803d", borderColor: "#22c55e", badgeText: "PREP STICKER • พุธ" },
+    thu: { label: "🟠 วันพฤหัสบดี (สีส้ม)", headerBg: "#c2410c", borderColor: "#f97316", badgeText: "PREP STICKER • พฤหัสฯ" },
+    fri: { label: "🔵 วันศุกร์ (สีฟ้า)", headerBg: "#0284c7", borderColor: "#38bdf8", badgeText: "PREP STICKER • ศุกร์" },
+    sat: { label: "🟣 วันเสาร์ (สีม่วง)", headerBg: "#7e22ce", borderColor: "#a855f7", badgeText: "PREP STICKER • เสาร์" },
+    sun: { label: "🔴 วันอาทิตย์ (สีแดง)", headerBg: "#b91c1c", borderColor: "#ef4444", badgeText: "PREP STICKER • อาทิตย์" }
+  };
+
+  const activeTheme = themeMap[selectedStickerColorTheme] || themeMap.blue;
+  const twelveArray = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  area.innerHTML = `
+    <div class="no-print" style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.15rem 1.35rem; margin-bottom: 1.25rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h4 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">
+            🏷️ เทมเพลตฟอร์มสติกเกอร์เปล่า (Fast-Tick Label) 12 ดวงต่อหน้ากระดาษ A4 (3 แถวแนวตั้ง × 4 แถวแนวนอน)
+          </h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+            ออกแบบให้พนักงานใช้วิธี <strong>"ติ๊กเลือกวัตถุดิบ"</strong> และเขียนวันที่หั่น/วันหมดอายุด้วยปากกาเคมีกันน้ำ (Permanent Marker) • แนะนำใช้สติกเกอร์ชนิดกันน้ำหรือละลายน้ำได้ (Water-soluble)
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+          <select class="form-select" style="width: auto; font-weight: 700; padding: 0.5rem 0.85rem;" onchange="selectedStickerColorTheme = this.value; renderFridgeManagementView();">
+            ${Object.entries(themeMap).map(([k, v]) => `<option value="${k}" ${selectedStickerColorTheme === k ? 'selected' : ''}>${v.label}</option>`).join("")}
+          </select>
+          <button class="action-btn btn-primary" onclick="window.print()" style="width: auto; padding: 0.6rem 1.35rem;">
+            🖨️ สั่งพิมพ์สติกเกอร์ 12 ดวง (A4)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- กระดาษ A4 เรียงสติกเกอร์ 12 ดวง (3 คอลัมน์ x 4 แถว) -->
+    <div class="sticker-sheet-a4-container">
+      <div class="sticker-grid-12">
+        ${twelveArray.map(() => `
+          <div class="fast-tick-sticker-card" style="border-color: ${activeTheme.borderColor};">
+            <div class="fast-tick-sticker-header" style="background: ${activeTheme.headerBg};">
+              <span>${activeTheme.badgeText}</span>
+              <span style="font-size: 0.68rem; font-weight: 600;">ผมขอทอด SOP</span>
+            </div>
+            <div class="fast-tick-sticker-body">
+              <div style="font-weight: 800; font-size: 0.74rem; color: #0f172a; margin-bottom: 0.2rem;">วัตถุดิบ (ติ๊กเลือก):</div>
+              <div class="fast-tick-options-grid">
+                <span>☐ ต้นหอมซอย</span>
+                <span>☐ หอมใหญ่หั่น</span>
+                <span>☐ เห็ดเข็มทองหั่น</span>
+                <span>☐ กิมจิ Superlock</span>
+                <span>☐ ไชเท้าดอง</span>
+                <span>☐ น้ำซุปกิมจิ</span>
+                <span>☐ ไก่หมัก/ซอส</span>
+                <span style="grid-column: span 2;">☐ อื่นๆ: ...............................</span>
+              </div>
+              <div class="fast-tick-line">
+                <strong>วันที่หั่น/เปิด:</strong> ......../......../........ <strong>เวลา:</strong> ...........น.
+              </div>
+              <div class="fast-tick-line" style="color: #b91c1c;">
+                <strong>วันหมดอายุ:</strong> ......../......../........ <strong>เวลา:</strong> ...........น.
+              </div>
+              <div class="fast-tick-footer">
+                <span><strong>กะ:</strong> ☐ เช้า ☐ เย็น</span>
+                <span><strong>ผู้เตรียม:</strong> .......................</span>
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}

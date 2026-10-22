@@ -128,6 +128,10 @@ function renderMainView() {
     renderStationCheatSheetsView();
     return;
   }
+  if (currentViewMode === "fridge-plan" && typeof renderFridgeManagementView === "function") {
+    renderFridgeManagementView();
+    return;
+  }
   if (currentViewMode === "daily-logs" && typeof renderDailyOperationsLogsView === "function") {
     renderDailyOperationsLogsView();
     return;
@@ -157,6 +161,9 @@ function renderSidebarNavigation() {
       <div class="sidebar-title" style="margin-bottom: 0.5rem; color: #b45309;">🚀 ระบบปฏิบัติการแฟรนไชส์</div>
       <a class="nav-item ${currentViewMode === 'sop' && currentCategory === 'all' ? 'active' : ''}" href="#" onclick="event.preventDefault(); selectSopStage('all', 'all')">
         <span>📖</span> คู่มือ SOP ทั้งหมด (7 หมวด)
+      </a>
+      <a class="nav-item ${currentViewMode === 'fridge-plan' ? 'active' : ''}" href="#" onclick="event.preventDefault(); switchMainModule('fridge-plan')">
+        <span>🧊</span> ผังตู้เย็น 2 ประตู & สติกเกอร์
       </a>
       <a class="nav-item ${currentViewMode === 'cheatsheets' ? 'active' : ''}" href="#" onclick="event.preventDefault(); switchMainModule('cheatsheets')">
         <span>⚡</span> Cheat Sheet แปะหน้าเตา/แพ็ก
@@ -276,6 +283,13 @@ function renderSOPList() {
   let html = `
     <!-- Quick Action Banner Bar -->
     <div class="ops-quick-strip no-print">
+      <div class="ops-quick-card" onclick="switchMainModule('fridge-plan')">
+        <span style="font-size: 1.5rem;">🧊</span>
+        <div>
+          <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">ผังตู้เย็น 2 ประตู & สติกเกอร์</div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">ผัง 4 ชั้น, เช็กลิสต์ & ป้าย 12 ดวง</div>
+        </div>
+      </div>
       <div class="ops-quick-card" onclick="switchMainModule('cheatsheets')">
         <span style="font-size: 1.5rem;">🔥</span>
         <div>

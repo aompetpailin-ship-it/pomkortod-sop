@@ -137,7 +137,6 @@ function showLoginModal() {
             🔑 ยืนยันเข้าสู่ระบบ
           </button>
         </form>
-
       </div>
     </div>
   `;
@@ -160,14 +159,15 @@ function handleUserLogin(event) {
     const validUsernames = [
       (acc.username || "").toLowerCase(),
       (acc.pin || "").toLowerCase(),
+      (acc.role || "").toLowerCase(),
       ...((acc.aliases || []).map(x => String(x).toLowerCase()))
     ];
     const validPasswords = [
-      acc.password,
-      acc.pin,
-      ...(acc.altPasswords || [])
+      String(acc.password || "").toLowerCase(),
+      String(acc.pin || "").toLowerCase(),
+      ...((acc.altPasswords || []).map(x => String(x).toLowerCase()))
     ];
-    return validUsernames.includes(inputUser) && validPasswords.includes(inputPass);
+    return validUsernames.includes(inputUser) && validPasswords.includes(inputPass.toLowerCase());
   });
 
   if (matchedUser) {
