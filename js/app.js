@@ -16,16 +16,7 @@ let currentActiveSopId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   initAntiCopyProtection();
-  renderSidebarNavigation();
   initEventListeners();
-
-  // ดึงข้อมูลล่าสุดจาก Firebase / Cloud
-  if (typeof fetchSOPDataFromCloud === "function") {
-    const cloudSops = await fetchSOPDataFromCloud();
-    if (cloudSops) {
-      renderSidebarNavigation();
-    }
-  }
 
   const currentUser = getCurrentUserSession();
   if (currentUser) {
@@ -40,6 +31,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   renderSidebarNavigation();
   renderMainView();
+
+  // ดึงข้อมูลล่าสุดจาก Firebase / Cloud แบบ Background โดยไม่บล็อกหน้าล็อกอิน
+  if (typeof fetchSOPDataFromCloud === "function") {
+    try {
+      const cloudSops = await fetchSOPDataFromCloud();
+      if (cloudSops) {
+        renderSidebarNavigation();
+        if (getCurrentUserSession()) {
+          renderMainView();
+        }
+      }
+    } catch (err) {
+      console.warn("Cloud sync skipped:", err);
+    }
+  }
 });
 
 // ระบบป้องกันการคัดลอกข้อความและคลิกขวาสำหรับพนักงานทั่วไป (ไม่มีลายน้ำบังรูปอาหารตามที่กำหนด)

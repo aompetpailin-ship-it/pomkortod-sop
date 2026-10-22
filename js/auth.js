@@ -8,8 +8,10 @@ const DEFAULT_USER_ACCOUNTS = [
   {
     id: "user-admin",
     username: "admin",
+    aliases: ["admin", "owner", "9999"],
     name: "คุณเจ้าของร้าน / ผู้บริหารแฟรนไชส์",
-    password: "pktadmin1234",
+    password: "pkt888",
+    altPasswords: ["pktadmin1234", "9999", "1234"],
     pin: "9999",
     role: "admin",
     branchCode: "ALL",
@@ -18,9 +20,11 @@ const DEFAULT_USER_ACCOUNTS = [
   },
   {
     id: "user-kitchen",
-    username: "chef",
+    username: "kitchen",
+    aliases: ["kitchen", "chef", "1111"],
     name: "ทีมเชฟ / สเตชันเตาทอด",
-    password: "kitchen1234",
+    password: "1234",
+    altPasswords: ["kitchen1234", "1111"],
     pin: "1111",
     role: "kitchen",
     branchCode: "B1",
@@ -29,9 +33,11 @@ const DEFAULT_USER_ACCOUNTS = [
   },
   {
     id: "user-front",
-    username: "service",
+    username: "front",
+    aliases: ["front", "service", "2222"],
     name: "ทีมหน้าร้าน & แพ็กเดลิเวอรี",
-    password: "front1234",
+    password: "1234",
+    altPasswords: ["front1234", "2222"],
     pin: "2222",
     role: "front",
     branchCode: "B1",
@@ -48,7 +54,13 @@ function getUserAccounts() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         parsed.forEach(a => {
           if (typeof a.active === "undefined") a.active = true;
-          if (!a.branchCode) a.branchCode = "B1";
+          if (!a.branchCode) a.branchCode = a.role === "admin" ? "ALL" : "B1";
+          // ผสาน aliases และ altPasswords จากค่ามาตรฐานเพื่อให้ล็อกอินได้ทั้งรหัสเดิมและรหัสใหม่
+          const def = DEFAULT_USER_ACCOUNTS.find(d => d.id === a.id || d.role === a.role);
+          if (def) {
+            a.aliases = Array.from(new Set([...(a.aliases || []), ...(def.aliases || []), a.username]));
+            a.altPasswords = Array.from(new Set([...(a.altPasswords || []), ...(def.altPasswords || []), def.password, a.password]));
+          }
         });
         return parsed;
       }
@@ -144,10 +156,19 @@ function handleUserLogin(event) {
 
   const accounts = getUserAccounts();
 
-  const matchedUser = accounts.find(acc =>
-    (acc.username.toLowerCase() === inputUser || acc.pin === inputUser) &&
-    (acc.password === inputPass || acc.pin === inputPass)
-  );
+  const matchedUser = accounts.find(acc => {
+    const validUsernames = [
+      (acc.username || "").toLowerCase(),
+      (acc.pin || "").toLowerCase(),
+      ...((acc.aliases || []).map(x => String(x).toLowerCase()))
+    ];
+    const validPasswords = [
+      acc.password,
+      acc.pin,
+      ...(acc.altPasswords || [])
+    ];
+    return validUsernames.includes(inputUser) && validPasswords.includes(inputPass);
+  });
 
   if (matchedUser) {
     if (matchedUser.active === false) {
