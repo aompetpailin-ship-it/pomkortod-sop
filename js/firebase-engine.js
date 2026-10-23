@@ -224,6 +224,12 @@ async function syncAllAppDataToFirebase() {
     const wasteLogs = typeof getWasteLogsData === "function" ? getWasteLogsData() : [];
     const trainingData = typeof getOnboardingProgressData === "function" ? getOnboardingProgressData() : {};
     const accounts = typeof getUserAccounts === "function" ? getUserAccounts() : [];
+    const trainingConfig = typeof getTrainingConfigData === "function" ? getTrainingConfigData() : null;
+    const cheatSheetsConfig = typeof getCheatSheetsConfig === "function" ? getCheatSheetsConfig() : null;
+    const checklistTemplates = typeof getChecklistTemplatesConfig === "function" ? getChecklistTemplatesConfig() : null;
+    const fridgePlans = typeof getFridgePlansData === "function" ? getFridgePlansData() : null;
+    const fridgeLogs = typeof getFridgeDailyLogs === "function" ? getFridgeDailyLogs() : null;
+    const stickerItems = typeof getStickerCheckboxItems === "function" ? getStickerCheckboxItems() : null;
 
     // บันทึกแต่ละ SOP แยกเป็น Document ย่อยใน Collection 'pkt_sops' เพื่อความเร็วและไม่ติดขนาด 1MB
     for (const sop of allSops) {
@@ -241,6 +247,12 @@ async function syncAllAppDataToFirebase() {
     await firestoreSaveDocument("pkt_app_state", "waste_logs", wasteLogs);
     await firestoreSaveDocument("pkt_app_state", "onboarding_progress", trainingData);
     await firestoreSaveDocument("pkt_app_state", "user_accounts", accounts);
+    if (trainingConfig) await firestoreSaveDocument("pkt_app_state", "training_config", trainingConfig);
+    if (cheatSheetsConfig) await firestoreSaveDocument("pkt_app_state", "cheatsheets_config", cheatSheetsConfig);
+    if (checklistTemplates) await firestoreSaveDocument("pkt_app_state", "checklist_templates", checklistTemplates);
+    if (fridgePlans) await firestoreSaveDocument("pkt_app_state", "fridge_plans", fridgePlans);
+    if (fridgeLogs) await firestoreSaveDocument("pkt_app_state", "fridge_daily_logs", fridgeLogs);
+    if (stickerItems) await firestoreSaveDocument("pkt_app_state", "sticker_items", stickerItems);
 
     return true;
   } catch (err) {
@@ -296,6 +308,36 @@ async function pullAllAppDataFromFirebase() {
     const accounts = await firestoreGetDocument("pkt_app_state", "user_accounts");
     if (accounts && Array.isArray(accounts)) {
       localStorage.setItem("PKT_USER_ACCOUNTS", JSON.stringify(accounts));
+    }
+
+    const trainingConfig = await firestoreGetDocument("pkt_app_state", "training_config");
+    if (trainingConfig && typeof trainingConfig === "object") {
+      localStorage.setItem("PKT_TRAINING_CONFIG_V1", JSON.stringify(trainingConfig));
+    }
+
+    const cheatSheetsConfig = await firestoreGetDocument("pkt_app_state", "cheatsheets_config");
+    if (cheatSheetsConfig && typeof cheatSheetsConfig === "object") {
+      localStorage.setItem("PKT_CHEATSHEETS_CONFIG_V1", JSON.stringify(cheatSheetsConfig));
+    }
+
+    const checklistTemplates = await firestoreGetDocument("pkt_app_state", "checklist_templates");
+    if (checklistTemplates && typeof checklistTemplates === "object") {
+      localStorage.setItem("PKT_CHECKLIST_TEMPLATES_V1", JSON.stringify(checklistTemplates));
+    }
+
+    const fridgePlans = await firestoreGetDocument("pkt_app_state", "fridge_plans");
+    if (fridgePlans && typeof fridgePlans === "object") {
+      localStorage.setItem("PKT_FRIDGE_PLANS_V1", JSON.stringify(fridgePlans));
+    }
+
+    const fridgeLogs = await firestoreGetDocument("pkt_app_state", "fridge_daily_logs");
+    if (fridgeLogs && typeof fridgeLogs === "object") {
+      localStorage.setItem("PKT_FRIDGE_DAILY_LOGS_V1", JSON.stringify(fridgeLogs));
+    }
+
+    const stickerItems = await firestoreGetDocument("pkt_app_state", "sticker_items");
+    if (stickerItems && Array.isArray(stickerItems)) {
+      localStorage.setItem("PKT_STICKER_ITEMS_V1", JSON.stringify(stickerItems));
     }
 
     return !!(sops && sops.length > 0);

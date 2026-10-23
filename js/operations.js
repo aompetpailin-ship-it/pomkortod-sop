@@ -145,12 +145,107 @@ function saveOnboardingProgressData(data) {
 }
 
 // =========================================================================
-// 1️⃣ กระดาน CHEAT SHEET ประจำสเตชัน (แปะข้างเตาทอด / โต๊ะแพ็ก / เดลิเวอรี)
+// 1️⃣ กระดาน CHEAT SHEET ประจำสเตชัน (แก้ไขเนื้อหาได้ทุกส่วนสำหรับ Admin + พิมพ์ A4)
 // =========================================================================
+
+const DEFAULT_CHEATSHEETS_CONFIG = {
+  frying: {
+    title: "🔥 QUICK GUIDE: สเตชันเตาทอดไก่ (FRYING CHEAT SHEET)",
+    badgeRight: "แปะระดับสายตา 140-150 ซม.",
+    ironRules: [
+      "1. ไฟต้อง READY: อุณหภูมิน้ำมันต้องถึงเกณฑ์และไฟ READY ติดก่อนลงไก่เสมอ",
+      "2. แกนกลาง ≥ 74°C: วัดอุณหภูมิเนื้อส่วนหนาสุดหลังทอดต้องได้ ≥ 74°C (165°F) ทุกครั้ง",
+      "3. สะเด็ดน้ำมัน 30 วิ: ยกตะแกรงเขย่าสะเด็ดน้ำมัน 30 วินาทีก่อนนำขึ้นตู้โชว์เสมอ"
+    ],
+    matrixRows: [
+      { part: "🍗 สะโพก / น่องติดกระดูก", temp: "165°C", timeText: "11:30 - 12:00 นาที", maxBatch: "ไม่เกิน 12 ชิ้น", coreTemp: "≥ 74°C", timerSec: 690 },
+      { part: "🥩 อกไก่ / สันในชิ้นใหญ่", temp: "165°C", timeText: "09:30 - 10:00 นาที", maxBatch: "ไม่เกิน 12 ชิ้น", coreTemp: "≥ 74°C", timerSec: 600 },
+      { part: "🪽 ปีกเต็ม / ปีกบน-กลาง", temp: "170°C", timeText: "08:00 - 08:30 นาที", maxBatch: "ไม่เกิน 18 ชิ้น", coreTemp: "≥ 74°C", timerSec: 510 },
+      { part: "🍿 ไก่ป๊อป / สันในไร้กระดูก", temp: "175°C", timeText: "04:00 - 04:30 นาที", maxBatch: "ไม่เกิน 500 กรัม", coreTemp: "≥ 74°C", timerSec: 270 }
+    ],
+    steps: [
+      { stepNum: "STEP 1", title: "คลุกแป้งรอบแรก", desc: "กวาดแป้งกลบ พลิกกดเบาๆ 7-10 ครั้ง (ห้ามบีบเนื้อไก่)" },
+      { stepNum: "STEP 2", title: "จุ่มน้ำสะอาด", desc: "แช่ในตะแกรง 3-5 วินาที ยกขึ้นพักสะเด็ดน้ำ 5 วินาที" },
+      { stepNum: "STEP 3", title: "ตลบแป้งรอบสอง (Fold & Roll)", desc: "สอดมือตลบแป้งหมุนวน 10-12 ครั้ง ให้เกิดริ้วเกล็ดฟู" },
+      { stepNum: "STEP 4", title: "สะบัดลงเตาทอด", desc: "เคาะข้อมือ 2 ครั้ง หย่อนออกจากตัวเข้าหาด้านในหม้อ" }
+    ],
+    passItems: [
+      "สีเหลืองทอง (Golden Brown) สม่ำเสมอทั่วทั้งชิ้น",
+      "เกล็ดแป้งกรอบฟูบาง ไม่แข็งกระด้างเป็นก้อน",
+      "ผ่าดูเนื้อในขาวฉ่ำ ไม่มีน้ำเลือดแดงซึมที่ข้อกระดูก"
+    ],
+    failItems: [
+      "สีน้ำตาลเข้ม/ดำคล้ำ (น้ำมันเก่าหรือไฟแรงเกินไป)",
+      "แป้งเกาะเป็นก้อนหนาแข็ง (ไม่ได้ร่อนแป้งทุก 4 รอบ หรือบีบไก่แรง)",
+      "น้ำมันเยิ้มแฉะ (ลงไก่ตอนอุณหภูมิตก หรือใส่ไก่เกินจำนวนต่อแบทช์)"
+    ],
+    oilCareNote: "ร่อนแป้งทุกๆ 4 รอบการคลุก • ช้อนเศษกากทุกครั้งหลังยกไก่ขึ้น • อายุในตู้ Holding เก็บได้ไม่เกิน 45 นาที"
+  },
+  packing: {
+    title: "📦 PACKING & ASSEMBLY CHEAT SHEET (สเตชันจัดเซ็ต & แพ็กเกจ)",
+    badgeRight: "Zero Missing Items",
+    ironRules: [
+      "1. เปิดรูระบายไอน้ำเสมอ: ห้ามปิดฝากล่องทึบสนิททันที เพื่อป้องกันไอน้ำทำให้ไก่แฉะนิ่ม",
+      "2. ตรวจบิล POS แบบ Tick-off: เช็กสินค้าในถุงเทียบกับใบเสร็จชิ้นต่อชิ้นก่อนปิดถุง",
+      "3. ห้ามส่งของหมดอายุ: ของทอดในตู้โชว์ที่เกินเวลา Holding ห้ามส่งให้ลูกค้าเด็ดขาด"
+    ],
+    holdingRows: [
+      { item: "🍗 ไก่ทอดติดกระดูก (น่อง/สะโพก)", temp: "60°C - 65°C", maxTime: "45 นาที", warning: "หนังเริ่มเหี่ยว หนังนิ่ม ไม่กรอบ", timerSec: 2700 },
+      { item: "🍗 ไก่ไม่มีกระดูก / สันใน / วิงส์", temp: "60°C - 65°C", maxTime: "30 นาที", warning: "เนื้อเริ่มแห้งกระด้าง สีเข้มขึ้น", timerSec: 1800 },
+      { item: "🍿 ไก่ป๊อป", temp: "60°C - 65°C", maxTime: "20 นาที", warning: "แป้งเริ่มแข็งกระด้าง เคี้ยวเหนียว", timerSec: 1200 },
+      { item: "🍟 เฟรนช์ฟรายส์ / ของทานเล่น", temp: "โคมไฟความร้อน", maxTime: "15 นาที", warning: "เหี่ยวนิ่ม อมน้ำมัน เย็นชืด", timerSec: 900 }
+    ],
+    sauceNote: "ขนาด 3-4 ชิ้น: ซอส 1 ทัพพี (30 ml) • ขนาด 6 ชิ้น: ซอส 2 ทัพพี (60 ml) • ทา/คลุกเร็วภายใน 10 วินาที ห้ามแช่ไก่ค้างในกระทะซอส",
+    shakeNote: "ไก่ป๊อป 1 ที่: ผงปรุง 1 ช้อนตวง (5 g) • เฟรนช์ฟรายส์ 1 ที่: ผงปรุง 1.5 ช้อนตวง (7.5 g) • เขย่าในโถปิดฝา 5 ครั้ง พัก 2 วิ เขย่าซ้ำ 3 ครั้ง",
+    packagingRows: [
+      { setSize: "เซ็ตเดี่ยว (1-2 ชิ้น)", container: "ซองกระดาษกันน้ำมัน หรือ กล่อง S", vent: "พับปากซองหลวมๆ", sides: "ซอสจิ้ม 1 ถ้วย + ทิชชู่ 2 แผ่น" },
+      { setSize: "เซ็ตกลาง (4-6 ชิ้น)", container: "กล่องกระดาษล็อกไซส์ M", vent: "เปิดรูระบาย 2 ข้าง", sides: "ซอสจิ้ม 2 ถ้วย + ถุงมือพลาสติก 2 คู่" },
+      { setSize: "บักเก็ตครอบครัว (8+ ชิ้น)", container: "ถัง Bucket กระดาษ", vent: "ฝาเจาะรูระบายไอน้ำ", sides: "ซอสจิ้ม 3-4 ถ้วย + ถุงมือพลาสติก 4 คู่" },
+      { setSize: "ของทอดทานเล่น / เฟรนช์ฟรายส์", container: "ซองกระดาษทรงสูง", vent: "ห้ามพับปิดปากถุง", sides: "ซอสมะเขือเทศ 2 ซอง" }
+    ]
+  },
+  delivery: {
+    title: "🛵 คู่มือตั้งค่า Prep Time 4 แอป & ไทม์ไลน์รับมือไรเดอร์มารับช้า",
+    badgeRight: "สูตร Base Prep = 18-20 นาที",
+    formulaNote: "Prep Time = เวลารับบิลและคลุกแป้ง (3 นาที) + เวลาทอดชิ้นใหญ่สุด (12 นาที) + เวลาพักสะเด็ด/จัดเซ็ต (3 นาที) = 18 - 20 นาที",
+    prepRows: [
+      { status: "🟢 มีไก่สำรองในตู้ Holding ครบ", prepTime: "12 - 15 นาที", action: "จัดเซ็ตคลุกซอสและแพ็กได้ทันที ไรเดอร์มาถึงรับของไปได้เลย" },
+      { status: "🟡 ทอดใหม่ตามสั่ง (Made-to-Order)", prepTime: "18 - 20 นาที", action: "ไรเดอร์จะมาถึงตอนไก่เหลือเวลาทอดอีก 2-3 นาทีพอดี ได้ไก่ร้อนกรอบที่สุด" },
+      { status: "🔴 ชั่วโมงเร่งด่วน (Peak 11:30-13:30 / 17:30-19:30)", prepTime: "25 - 30 นาที", action: "เปิดโหมด Busy Mode ใน Grab / ปรับเวลาต่อบิลใน LINE MAN ลดความตึงเครียดหน้าร้าน" },
+      { status: "🌧️ ฝนตกหนัก (ไรเดอร์ขาดแคลน)", prepTime: "20 นาที + เก็บในตู้ Holding", action: "อย่าเพิ่งนำกล่องไก่ใส่ถุงมัดปากจนกว่าไรเดอร์จะมารายงานตัวหน้าร้าน" }
+    ],
+    riderSteps: [
+      { stepNum: "นาทีที่ 0 - 15", title: "เก็บในตู้ Holding 60°C", desc: "ใส่กล่องที่เปิดรูระบายไอน้ำ วางในตู้โชว์ 60°C ห้ามใส่ถุงมัดปากเด็ดขาด" },
+      { stepNum: "นาทีที่ 15 - 20", title: "กดแจ้งเตือน / โทรตาม", desc: "เช็กแอป Merchant กดปุ่ม 'รายงานคนขับมาช้า' หรือโทรติดต่อไรเดอร์ทันที" },
+      { stepNum: "นาทีที่ 30 (วิกฤต)", title: "ตรวจสอบความกรอบ", desc: "หากไรเดอร์ยังไม่มาและไก่เริ่มนิ่ม ให้เตรียมแบทช์สำรองและบันทึก Waste Log" },
+      { stepNum: "นาทีที่ 45 ขึ้นไป", title: "คัดทิ้ง & ทอดใหม่ / ยื่นเคลม", desc: "ห้ามส่งไก่เก่าที่นิ่มแล้วเด็ดขาด! ถ่ายรูปคู่บิล 3 มุมเพื่อยื่นเคลมค่าอาหาร 100%" }
+    ]
+  }
+};
+
+function getCheatSheetsConfig() {
+  const local = localStorage.getItem("PKT_CHEATSHEETS_CONFIG_V33");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.frying && parsed.packing && parsed.delivery) return parsed;
+    } catch (e) {}
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_CHEATSHEETS_CONFIG));
+}
+
+function saveCheatSheetsConfig(cfg) {
+  localStorage.setItem("PKT_CHEATSHEETS_CONFIG_V33", JSON.stringify(cfg));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "cheatsheets_config", cfg);
+  }
+}
 
 function renderStationCheatSheetsView() {
   const container = document.getElementById("sopContentArea");
   if (!container) return;
+
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
 
   let html = `
     <div class="sop-detail-view">
@@ -164,7 +259,12 @@ function renderStationCheatSheetsView() {
             ออกแบบตัวเลขใหญ่พิเศษสำหรับเปิดค้างไว้บนแท็บเล็ตประจำสเตชัน หรือกดสั่งพิมพ์ A4 เคลือบพลาสติกแปะผนังสแตนเลส
           </p>
         </div>
-        <div style="display: flex; gap: 0.6rem;">
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          ${isAdmin ? `
+            <button class="action-btn btn-secondary" onclick="openEditCheatSheetModal('${activeCheatSheetTab}')" style="width: auto; padding: 0.6rem 1.15rem; border-color: #f59e0b; background: #fffbeb; color: #b45309; font-weight: 800;">
+              ✏️ แก้ไขตาราง/เนื้อหา Cheat Sheet แผ่นนี้
+            </button>
+          ` : ''}
           <button class="action-btn btn-primary" onclick="window.print()" style="width: auto; padding: 0.65rem 1.25rem;">
             🖨️ พิมพ์แผ่น Cheat Sheet นี้ (A4)
           </button>
@@ -201,24 +301,25 @@ function renderActiveCheatSheetContent() {
   const body = document.getElementById("cheatSheetBodyArea");
   if (!body) return;
 
+  const cfgAll = getCheatSheetsConfig();
+
   if (activeCheatSheetTab === "frying") {
+    const f = cfgAll.frying;
     body.innerHTML = `
       <div class="cheat-sheet-board">
         <div class="cheat-banner-header">
           <div>
             <div style="font-size: 0.8rem; font-weight: 800; color: #fde68a; letter-spacing: 0.06em;">FRYING STATION QUICK GUIDE • [SOP-OPS-03]</div>
-            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">🔥 QUICK GUIDE: สเตชันเตาทอดไก่ (FRYING CHEAT SHEET)</h3>
+            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">${escapeHtml(f.title)}</h3>
           </div>
-          <span style="background: #dc2626; color: white; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">แปะระดับสายตา 140-150 ซม.</span>
+          <span style="background: #dc2626; color: white; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">${escapeHtml(f.badgeRight)}</span>
         </div>
 
         <!-- 3 Iron Rules -->
         <div class="iron-rules-box">
-          <div style="font-weight: 900; color: #991b1b; font-size: 1.05rem; margin-bottom: 0.5rem;">⚠️ กฎเหล็ก 3 ข้อหน้าเตาทอด (ห้ามฝ่าฝืนเด็ดขาด):</div>
+          <div style="font-weight: 900; color: #991b1b; font-size: 1.05rem; margin-bottom: 0.5rem;">⚠️ กฎเหล็กหน้าเตาทอด (ห้ามฝ่าฝืนเด็ดขาด):</div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;">
-            <div class="iron-rule-card"><strong>1. ไฟต้อง READY:</strong> อุณหภูมิน้ำมันต้องถึงเกณฑ์และไฟ READY ติดก่อนลงไก่เสมอ</div>
-            <div class="iron-rule-card"><strong>2. แกนกลาง ≥ 74°C:</strong> วัดอุณหภูมิเนื้อส่วนหนาสุดหลังทอดต้องได้ ≥ 74°C (165°F) ทุกครั้ง</div>
-            <div class="iron-rule-card"><strong>3. สะเด็ดน้ำมัน 30 วิ:</strong> ยกตะแกรงเขย่าสะเด็ดน้ำมัน 30 วินาทีก่อนนำขึ้นตู้โชว์เสมอ</div>
+            ${(f.ironRules || []).map(r => `<div class="iron-rule-card">${escapeHtml(r)}</div>`).join("")}
           </div>
         </div>
 
@@ -237,65 +338,30 @@ function renderActiveCheatSheetContent() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>🍗 สะโพก / น่องติดกระดูก</strong></td>
-                <td><span class="temp-pill">165°C</span></td>
-                <td><strong style="font-size: 1.2rem; color: #b45309;">11:30 - 12:00 นาที</strong></td>
-                <td>ไม่เกิน 12 ชิ้น</td>
-                <td><span class="pass-pill">≥ 74°C</span></td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(690, 'ทอดสะโพก/น่อง (11:30 น.)')">⏱️ จับเวลา 11:30 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🥩 อกไก่ / สันในชิ้นใหญ่</strong></td>
-                <td><span class="temp-pill">165°C</span></td>
-                <td><strong style="font-size: 1.2rem; color: #b45309;">09:30 - 10:00 นาที</strong></td>
-                <td>ไม่เกิน 12 ชิ้น</td>
-                <td><span class="pass-pill">≥ 74°C</span></td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(600, 'ทอดอกไก่/ชิ้นใหญ่ (10:00 น.)')">⏱️ จับเวลา 10:00 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🪽 ปีกเต็ม / ปีกบน-กลาง</strong></td>
-                <td><span class="temp-pill">170°C</span></td>
-                <td><strong style="font-size: 1.2rem; color: #b45309;">08:00 - 08:30 นาที</strong></td>
-                <td>ไม่เกิน 18 ชิ้น</td>
-                <td><span class="pass-pill">≥ 74°C</span></td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(510, 'ทอดปีกไก่ (8:30 น.)')">⏱️ จับเวลา 08:30 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🍿 ไก่ป๊อป / สันในไร้กระดูก</strong></td>
-                <td><span class="temp-pill">175°C</span></td>
-                <td><strong style="font-size: 1.2rem; color: #b45309;">04:00 - 04:30 นาที</strong></td>
-                <td>ไม่เกิน 500 กรัม</td>
-                <td><span class="pass-pill">≥ 74°C</span></td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(270, 'ทอดไก่ป๊อป (4:30 น.)')">⏱️ จับเวลา 04:30 น.</button></td>
-              </tr>
+              ${(f.matrixRows || []).map(row => `
+                <tr>
+                  <td><strong>${escapeHtml(row.part)}</strong></td>
+                  <td><span class="temp-pill">${escapeHtml(row.temp)}</span></td>
+                  <td><strong style="font-size: 1.2rem; color: #b45309;">${escapeHtml(row.timeText)}</strong></td>
+                  <td>${escapeHtml(row.maxBatch)}</td>
+                  <td><span class="pass-pill">${escapeHtml(row.coreTemp)}</span></td>
+                  <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(${parseInt(row.timerSec) || 600}, '${escapeQuotes(row.part)}')">⏱️ จับเวลา</button></td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
         </div>
 
         <!-- 2. 4-Step Hand Technique -->
-        <h4 class="cheat-section-title">2. สูตรลับจังหวะมือ (4 สเต็ปสร้างเกล็ดกรอบสม่ำเสมอ)</h4>
-        <div class="flow-steps-grid">
-          <div class="flow-step-box">
-            <div class="flow-step-num">STEP 1</div>
-            <div class="flow-step-title">คลุกแป้งรอบแรก</div>
-            <div class="flow-step-desc">กวาดแป้งกลบ พลิกกดเบาๆ <strong>7-10 ครั้ง</strong> (ห้ามบีบเนื้อไก่)</div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">STEP 2</div>
-            <div class="flow-step-title">จุ่มน้ำสะอาด</div>
-            <div class="flow-step-desc">แช่ในตะแกรง <strong>3-5 วินาที</strong> ยกขึ้นพักสะเด็ดน้ำ <strong>5 วินาที</strong></div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">STEP 3</div>
-            <div class="flow-step-title">ตลบแป้งรอบสอง (Fold & Roll)</div>
-            <div class="flow-step-desc">สอดมือตลบแป้งหมุนวน <strong>10-12 ครั้ง</strong> ให้เกิดริ้วเกล็ดฟู</div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">STEP 4</div>
-            <div class="flow-step-title">สะบัดลงเตาทอด</div>
-            <div class="flow-step-desc">เคาะข้อมือ <strong>2 ครั้ง</strong> หย่อนออกจากตัวเข้าหาด้านในหม้อ</div>
-          </div>
+        <h4 class="cheat-section-title">2. สูตรลับจังหวะมือ (สร้างเกล็ดกรอบสม่ำเสมอ)</h4>
+        <div class="flow-steps-grid" style="margin-bottom: 1.5rem;">
+          ${(f.steps || []).map(st => `
+            <div class="flow-step-box">
+              <div class="flow-step-num">${escapeHtml(st.stepNum)}</div>
+              <div class="flow-step-title">${escapeHtml(st.title)}</div>
+              <div class="flow-step-desc">${escapeHtml(st.desc)}</div>
+            </div>
+          `).join("")}
         </div>
 
         <!-- 3. Pass vs Fail Visual Check -->
@@ -304,47 +370,40 @@ function renderActiveCheatSheetContent() {
           <div style="background: #ecfdf5; border: 2px solid #10b981; border-radius: 14px; padding: 1.1rem;">
             <div style="font-weight: 900; color: #047857; font-size: 1.05rem; margin-bottom: 0.5rem;">✅ ผ่านมาตรฐาน (PASS)</div>
             <ul style="padding-left: 1.2rem; color: #065f46; font-size: 0.92rem; line-height: 1.7;">
-              <li><strong>สีเหลืองทอง (Golden Brown)</strong> สม่ำเสมอทั่วทั้งชิ้น</li>
-              <li><strong>เกล็ดแป้งกรอบฟูบาง</strong> ไม่แข็งกระด้างเป็นก้อน</li>
-              <li><strong>ผ่าดูเนื้อในขาวฉ่ำ</strong> ไม่มีน้ำเลือดแดงซึมที่ข้อกระดูก</li>
+              ${(f.passItems || []).map(p => `<li>${escapeHtml(p)}</li>`).join("")}
             </ul>
           </div>
           <div style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 14px; padding: 1.1rem;">
             <div style="font-weight: 900; color: #b91c1c; font-size: 1.05rem; margin-bottom: 0.5rem;">❌ ไม่ผ่าน / ห้ามเสิร์ฟ (FAIL)</div>
             <ul style="padding-left: 1.2rem; color: #991b1b; font-size: 0.92rem; line-height: 1.7;">
-              <li><strong>สีน้ำตาลเข้ม/ดำคล้ำ</strong> (น้ำมันเก่าหรือไฟแรงเกินไป)</li>
-              <li><strong>แป้งเกาะเป็นก้อนหนาแข็ง</strong> (ไม่ได้ร่อนแป้งทุก 4 รอบ หรือบีบไก่แรง)</li>
-              <li><strong>น้ำมันเยิ้มแฉะ</strong> (ลงไก่ตอนอุณหภูมิตก หรือใส่ไก่เกินจำนวนต่อแบทช์)</li>
+              ${(f.failItems || []).map(fl => `<li>${escapeHtml(fl)}</li>`).join("")}
             </ul>
           </div>
         </div>
 
         <!-- 4. Oil Care Rules -->
         <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.9rem;">
-          <strong style="color: #b45309;">🛢️ 4. กฎรอบเวลา & การดูแลน้ำมัน (Oil Care & Quality):</strong>
-          <span style="margin-left: 0.5rem;">• <strong>ร่อนแป้ง (Sift Flour):</strong> ทุกๆ 4 รอบการคลุก</span>
-          <span style="margin-left: 0.75rem;">• <strong>ช้อนเศษกาก (Skim Floaties):</strong> ทุกครั้งหลังยกไก่ขึ้น</span>
-          <span style="margin-left: 0.75rem;">• <strong>อายุในตู้ Holding:</strong> เก็บได้ไม่เกิน 45 นาที (เกินเวลาคัดทิ้งลง Waste Log ทันที)</span>
+          <strong style="color: #b45309;">🛢️ 4. กฎรอบเวลา & การดูแลน้ำมัน:</strong>
+          <span style="margin-left: 0.5rem;">${escapeHtml(f.oilCareNote)}</span>
         </div>
       </div>
     `;
   } else if (activeCheatSheetTab === "packing") {
+    const p = cfgAll.packing;
     body.innerHTML = `
       <div class="cheat-sheet-board">
         <div class="cheat-banner-header" style="background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);">
           <div>
             <div style="font-size: 0.8rem; font-weight: 800; color: #bfdbfe; letter-spacing: 0.06em;">PACKING & ASSEMBLY STATION • [SOP-OPS-04]</div>
-            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">📦 PACKING & ASSEMBLY CHEAT SHEET (สเตชันจัดเซ็ต & แพ็กเกจ)</h3>
+            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">${escapeHtml(p.title)}</h3>
           </div>
-          <span style="background: #f59e0b; color: #000; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">Zero Missing Items</span>
+          <span style="background: #f59e0b; color: #000; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">${escapeHtml(p.badgeRight)}</span>
         </div>
 
         <div class="iron-rules-box" style="background: #eff6ff; border-color: #93c5fd;">
-          <div style="font-weight: 900; color: #1e40af; font-size: 1.05rem; margin-bottom: 0.5rem;">⚠️ 3 กฎเหล็กป้องกันลูกค้าเคลม:</div>
+          <div style="font-weight: 900; color: #1e40af; font-size: 1.05rem; margin-bottom: 0.5rem;">⚠️ กฎเหล็กป้องกันลูกค้าเคลม:</div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;">
-            <div class="iron-rule-card"><strong>1. เปิดรูระบายไอน้ำเสมอ:</strong> ห้ามปิดฝากล่องทึบสนิททันที เพื่อป้องกันไอน้ำทำให้ไก่แฉะนิ่ม</div>
-            <div class="iron-rule-card"><strong>2. ตรวจบิล POS แบบ Tick-off:</strong> เช็กสินค้าในถุงเทียบกับใบเสร็จชิ้นต่อชิ้นก่อนปิดถุง</div>
-            <div class="iron-rule-card"><strong>3. ห้ามส่งของหมดอายุ:</strong> ของทอดในตู้โชว์ที่เกินเวลา Holding ห้ามส่งให้ลูกค้าเด็ดขาด</div>
+            ${(p.ironRules || []).map(r => `<div class="iron-rule-card">${escapeHtml(r)}</div>`).join("")}
           </div>
         </div>
 
@@ -361,34 +420,15 @@ function renderActiveCheatSheetContent() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>🍗 ไก่ทอดติดกระดูก (น่อง/สะโพก)</strong></td>
-                <td>60°C - 65°C</td>
-                <td><strong style="color: #dc2626; font-size: 1.15rem;">45 นาที</strong></td>
-                <td>หนังเริ่มเหี่ยว หนังนิ่ม ไม่กรอบ</td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(2700, 'อายุสะโพก/น่องในตู้โชว์ (45 น.)')">⏳ จับเวลา 45 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🍗 ไก่ไม่มีกระดูก / สันใน / วิงส์</strong></td>
-                <td>60°C - 65°C</td>
-                <td><strong style="color: #dc2626; font-size: 1.15rem;">30 นาที</strong></td>
-                <td>เนื้อเริ่มแห้งกระด้าง สีเข้มขึ้น</td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(1800, 'อายุวิงส์/สันในตู้โชว์ (30 น.)')">⏳ จับเวลา 30 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🍿 ไก่ป๊อป</strong></td>
-                <td>60°C - 65°C</td>
-                <td><strong style="color: #dc2626; font-size: 1.15rem;">20 นาที</strong></td>
-                <td>แป้งเริ่มแข็งกระด้าง เคี้ยวเหนียว</td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(1200, 'อายุไก่ป๊อปในตู้โชว์ (20 น.)')">⏳ จับเวลา 20 น.</button></td>
-              </tr>
-              <tr>
-                <td><strong>🍟 เฟรนช์ฟรายส์ / ของทานเล่น</strong></td>
-                <td>โคมไฟความร้อน</td>
-                <td><strong style="color: #dc2626; font-size: 1.15rem;">15 นาที</strong></td>
-                <td>เหี่ยวนิ่ม อมน้ำมัน เย็นชืด</td>
-                <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(900, 'อายุเฟรนช์ฟรายส์ (15 น.)')">⏳ จับเวลา 15 น.</button></td>
-              </tr>
+              ${(p.holdingRows || []).map(row => `
+                <tr>
+                  <td><strong>${escapeHtml(row.item)}</strong></td>
+                  <td>${escapeHtml(row.temp)}</td>
+                  <td><strong style="color: #dc2626; font-size: 1.15rem;">${escapeHtml(row.maxTime)}</strong></td>
+                  <td>${escapeHtml(row.warning)}</td>
+                  <td class="no-print"><button class="timer-start-btn" onclick="startKitchenTimer(${parseInt(row.timerSec) || 1800}, '${escapeQuotes(row.item)}')">⏳ จับเวลา</button></td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
         </div>
@@ -397,23 +437,15 @@ function renderActiveCheatSheetContent() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
           <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 14px; padding: 1.1rem;">
             <div style="font-weight: 900; color: #b45309; font-size: 1.05rem; margin-bottom: 0.4rem;">🍗 ไก่คลุกซอส (Glazed Chicken)</div>
-            <p style="font-size: 0.92rem; margin-bottom: 0.3rem;">• <strong>ขนาด 3-4 ชิ้น:</strong> ซอส 1 ทัพพีมาตรฐาน (<strong>30 ml</strong>)</p>
-            <p style="font-size: 0.92rem; margin-bottom: 0.4rem;">• <strong>ขนาด 6 ชิ้น:</strong> ซอส 2 ทัพพีมาตรฐาน (<strong>60 ml</strong>)</p>
-            <div style="font-size: 0.84rem; color: #92400e; background: #fef3c7; padding: 0.45rem 0.7rem; border-radius: 8px;">
-              💡 <strong>เทคนิค:</strong> ทา/คลุกเร็วภายใน 10 วินาที ห้ามแช่ไก่ค้างในกระทะซอส (แป้งจะหลุด)
-            </div>
+            <p style="font-size: 0.92rem; line-height: 1.6;">${escapeHtml(p.sauceNote)}</p>
           </div>
           <div style="background: #fdf4ff; border: 2px solid #d946ef; border-radius: 14px; padding: 1.1rem;">
             <div style="font-weight: 900; color: #a21caf; font-size: 1.05rem; margin-bottom: 0.4rem;">🌶️ ไก่เขย่าผง (Seasoning Shake)</div>
-            <p style="font-size: 0.92rem; margin-bottom: 0.3rem;">• <strong>ไก่ป๊อป 1 ที่:</strong> ผงปรุง 1 ช้อนตวง (<strong>5 g</strong>)</p>
-            <p style="font-size: 0.92rem; margin-bottom: 0.4rem;">• <strong>เฟรนช์ฟรายส์ 1 ที่:</strong> ผงปรุง 1.5 ช้อนตวง (<strong>7.5 g</strong>)</p>
-            <div style="font-size: 0.84rem; color: #86198f; background: #fae8ff; padding: 0.45rem 0.7rem; border-radius: 8px;">
-              💡 <strong>เทคนิค:</strong> เขย่าในโถปิดฝา 5 ครั้ง ➔ พัก 2 วินาที ➔ เขย่าซ้ำอีก 3 ครั้งให้ผงกระจายทั่ว
-            </div>
+            <p style="font-size: 0.92rem; line-height: 1.6;">${escapeHtml(p.shakeNote)}</p>
           </div>
         </div>
 
-        <h4 class="cheat-section-title">3. มาตรฐานการเลือกบรรจุภัณฑ์ (Packaging Matrix) & 4 ขั้นตอน Double-Check</h4>
+        <h4 class="cheat-section-title">3. มาตรฐานการเลือกบรรจุภัณฑ์ (Packaging Matrix)</h4>
         <div style="overflow-x: auto; margin-bottom: 1.25rem;">
           <table class="matrix-table-large">
             <thead>
@@ -425,57 +457,35 @@ function renderActiveCheatSheetContent() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>เซ็ตเดี่ยว (1-2 ชิ้น)</strong></td>
-                <td>ซองกระดาษกันน้ำมัน หรือ กล่อง S</td>
-                <td>พับปากซองหลวมๆ</td>
-                <td>ซอสจิ้ม 1 ถ้วย + ทิชชู่ 2 แผ่น</td>
-              </tr>
-              <tr>
-                <td><strong>เซ็ตกลาง (4-6 ชิ้น)</strong></td>
-                <td>กล่องกระดาษล็อกไซส์ M</td>
-                <td>เปิดรูระบาย 2 ข้าง</td>
-                <td>ซอสจิ้ม 2 ถ้วย + ถุงมือพลาสติก 2 คู่</td>
-              </tr>
-              <tr>
-                <td><strong>บักเก็ตครอบครัว (8+ ชิ้น)</strong></td>
-                <td>ถัง Bucket กระดาษ</td>
-                <td>ฝาเจาะรูระบายไอน้ำ</td>
-                <td>ซอสจิ้ม 3-4 ถ้วย + ถุงมือพลาสติก 4 คู่</td>
-              </tr>
-              <tr>
-                <td><strong>ของทอดทานเล่น / เฟรนช์ฟรายส์</strong></td>
-                <td>ซองกระดาษทรงสูง</td>
-                <td>ห้ามพับปิดปากถุง</td>
-                <td>ซอสมะเขือเทศ 2 ซอง</td>
-              </tr>
+              ${(p.packagingRows || []).map(row => `
+                <tr>
+                  <td><strong>${escapeHtml(row.setSize)}</strong></td>
+                  <td>${escapeHtml(row.container)}</td>
+                  <td>${escapeHtml(row.vent)}</td>
+                  <td>${escapeHtml(row.sides)}</td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
-        </div>
-
-        <div class="flow-steps-grid">
-          <div class="flow-step-box"><div class="flow-step-num">CHECK 1</div><div class="flow-step-title">อ่านบิล POS</div><div class="flow-step-desc">ไฮไลต์รสชาติซอสและจำนวนชิ้น</div></div>
-          <div class="flow-step-box"><div class="flow-step-num">CHECK 2</div><div class="flow-step-title">ตรวจเครื่องเคียง</div><div class="flow-step-desc">ซอสจิ้ม, ช้อนส้อม, ถุงมือ, ทิชชู่ครบ</div></div>
-          <div class="flow-step-box"><div class="flow-step-num">CHECK 3</div><div class="flow-step-title">แยกอุณหภูมิ</div><div class="flow-step-desc">ห้ามวางน้ำเย็นทับกล่องไก่ร้อน (แยกถุง)</div></div>
-          <div class="flow-step-box"><div class="flow-step-num">CHECK 4</div><div class="flow-step-title">ปิดซีล Tamper Seal</div><div class="flow-step-desc">ติดสติกเกอร์กันแกะ + เขียน Order ID</div></div>
         </div>
       </div>
     `;
   } else {
+    const d = cfgAll.delivery;
     body.innerHTML = `
       <div class="cheat-sheet-board">
         <div class="cheat-banner-header" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%);">
           <div>
             <div style="font-size: 0.8rem; font-weight: 800; color: #a7f3d0; letter-spacing: 0.06em;">DELIVERY & PREP TIME MANAGEMENT • [SOP-OPS-05]</div>
-            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">🛵 คู่มือตั้งค่า Prep Time 4 แอป & ไทม์ไลน์รับมือไรเดอร์มารับช้า</h3>
+            <h3 style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">${escapeHtml(d.title)}</h3>
           </div>
-          <span style="background: #ffffff; color: #065f46; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">สูตร Base Prep = 18-20 นาที</span>
+          <span style="background: #ffffff; color: #065f46; padding: 0.35rem 0.9rem; border-radius: 20px; font-weight: 800; font-size: 0.85rem;">${escapeHtml(d.badgeRight)}</span>
         </div>
 
         <div class="iron-rules-box" style="background: #ecfdf5; border-color: #6ee7b7;">
           <div style="font-weight: 900; color: #065f46; font-size: 1.05rem; margin-bottom: 0.4rem;">📐 สูตรคำนวณเวลาเตรียมอาหาร (Base Prep Time) ร้านผมขอทอด:</div>
           <div style="font-size: 1rem; font-weight: 800; color: #047857;">
-            Prep Time = เวลารับบิลและคลุกแป้ง (3 นาที) + เวลาทอดชิ้นใหญ่สุด (12 นาที) + เวลาพักสะเด็ด/จัดเซ็ต (3 นาที) = 18 - 20 นาที
+            ${escapeHtml(d.formulaNote)}
           </div>
         </div>
 
@@ -490,56 +500,207 @@ function renderActiveCheatSheetContent() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>🟢 มีไก่สำรองในตู้ Holding ครบ</strong></td>
-                <td><strong style="color: #059669; font-size: 1.15rem;">12 - 15 นาที</strong></td>
-                <td>จัดเซ็ตคลุกซอสและแพ็กได้ทันที ไรเดอร์มาถึงรับของไปได้เลย</td>
-              </tr>
-              <tr>
-                <td><strong>🟡 ทอดใหม่ตามสั่ง (Made-to-Order)</strong></td>
-                <td><strong style="color: #d97706; font-size: 1.15rem;">18 - 20 นาที</strong></td>
-                <td>ไรเดอร์จะมาถึงตอนไก่เหลือเวลาทอดอีก 2-3 นาทีพอดี ได้ไก่ร้อนกรอบที่สุด</td>
-              </tr>
-              <tr>
-                <td><strong>🔴 ชั่วโมงเร่งด่วน (Peak 11:30-13:30 / 17:30-19:30)</strong></td>
-                <td><strong style="color: #dc2626; font-size: 1.15rem;">25 - 30 นาที</strong></td>
-                <td>เปิดโหมด Busy Mode ใน Grab / ปรับเวลาต่อบิลใน LINE MAN ลดความตึงเครียดหน้าร้าน</td>
-              </tr>
-              <tr>
-                <td><strong>🌧️ ฝนตกหนัก (ไรเดอร์ขาดแคลน)</strong></td>
-                <td><strong style="color: #2563eb; font-size: 1.15rem;">20 นาที + เก็บในตู้ Holding</strong></td>
-                <td>อย่าเพิ่งนำกล่องไก่ใส่ถุงมัดปากจนกว่าไรเดอร์จะมารายงานตัวหน้าร้าน</td>
-              </tr>
+              ${(d.prepRows || []).map(row => `
+                <tr>
+                  <td><strong>${escapeHtml(row.status)}</strong></td>
+                  <td><strong style="color: #059669; font-size: 1.15rem;">${escapeHtml(row.prepTime)}</strong></td>
+                  <td>${escapeHtml(row.action)}</td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
         </div>
 
         <h4 class="cheat-section-title">2. ไทม์ไลน์ปฏิบัติการเมื่อไรเดอร์เดลิเวอรีมารับอาหารช้า</h4>
         <div class="flow-steps-grid">
-          <div class="flow-step-box">
-            <div class="flow-step-num">นาทีที่ 0 - 15</div>
-            <div class="flow-step-title">เก็บในตู้ Holding 60°C</div>
-            <div class="flow-step-desc">ใส่กล่องที่เปิดรูระบายไอน้ำ วางในตู้โชว์ 60°C <strong>ห้ามใส่ถุงมัดปากเด็ดขาด</strong></div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">นาทีที่ 15 - 20</div>
-            <div class="flow-step-title">กดแจ้งเตือน / โทรตาม</div>
-            <div class="flow-step-desc">เช็กแอป Merchant กดปุ่ม <strong>"รายงานคนขับมาช้า"</strong> หรือโทรติดต่อไรเดอร์ทันที</div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">นาทีที่ 30 (วิกฤต)</div>
-            <div class="flow-step-title">ตรวจสอบความกรอบ</div>
-            <div class="flow-step-desc">หากไรเดอร์ยังไม่มาและไก่เริ่มนิ่ม ให้เตรียมแบทช์สำรองและบันทึก Waste Log</div>
-          </div>
-          <div class="flow-step-box">
-            <div class="flow-step-num">นาทีที่ 45 ขึ้นไป</div>
-            <div class="flow-step-title">คัดทิ้ง & ทอดใหม่ / ยื่นเคลม</div>
-            <div class="flow-step-desc">ห้ามส่งไก่เก่าที่นิ่มแล้วเด็ดขาด! ถ่ายรูปคู่บิล 3 มุมเพื่อยื่นเคลมค่าอาหาร 100%</div>
-          </div>
+          ${(d.riderSteps || []).map(st => `
+            <div class="flow-step-box">
+              <div class="flow-step-num">${escapeHtml(st.stepNum)}</div>
+              <div class="flow-step-title">${escapeHtml(st.title)}</div>
+              <div class="flow-step-desc">${escapeHtml(st.desc)}</div>
+            </div>
+          `).join("")}
         </div>
       </div>
     `;
   }
+}
+
+function openEditCheatSheetModal(tabKey) {
+  const cfgAll = getCheatSheetsConfig();
+  const data = cfgAll[tabKey];
+  if (!data) return;
+
+  let bodyFieldsHtml = "";
+  if (tabKey === "frying") {
+    bodyFieldsHtml = `
+      <div class="form-group">
+        <label class="form-label">ชื่อหัวข้อกระดาน</label>
+        <input type="text" id="csEditTitle" class="form-input" value="${escapeHtml(data.title)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">กฎเหล็กหน้าเตาทอด (บรรทัดละ 1 ข้อ)</label>
+        <textarea id="csEditRules" class="form-textarea" rows="3">${escapeHtml((data.ironRules || []).join("\n"))}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ตารางเวลาและอุณหภูมิทอด (รูปแบบต่อบรรทัด: ชิ้นส่วน | อุณหภูมิ | เวลาทอด | ปริมาณสูงสุด | แกนกลาง | วินาทีจับเวลา)</label>
+        <textarea id="csEditMatrix" class="form-textarea" rows="5">${escapeHtml((data.matrixRows || []).map(r => `${r.part} | ${r.temp} | ${r.timeText} | ${r.maxBatch} | ${r.coreTemp} | ${r.timerSec}`).join("\n"))}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">จังหวะมือ 4 ขั้นตอน (รูปแบบต่อบรรทัด: STEP | ชื่อขั้นตอน | รายละเอียด)</label>
+        <textarea id="csEditSteps" class="form-textarea" rows="4">${escapeHtml((data.steps || []).map(s => `${s.stepNum} | ${s.title} | ${s.desc}`).join("\n"))}</textarea>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label class="form-label">✅ เกณฑ์ผ่านมาตรฐาน PASS (บรรทัดละ 1 ข้อ)</label>
+          <textarea id="csEditPass" class="form-textarea" rows="3">${escapeHtml((data.passItems || []).join("\n"))}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">❌ เกณฑ์ไม่ผ่าน FAIL (บรรทัดละ 1 ข้อ)</label>
+          <textarea id="csEditFail" class="form-textarea" rows="3">${escapeHtml((data.failItems || []).join("\n"))}</textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมายเหตุการดูแลน้ำมันด้านล่าง</label>
+        <input type="text" id="csEditOilNote" class="form-input" value="${escapeHtml(data.oilCareNote)}" />
+      </div>
+    `;
+  } else if (tabKey === "packing") {
+    bodyFieldsHtml = `
+      <div class="form-group">
+        <label class="form-label">ชื่อหัวข้อกระดาน</label>
+        <input type="text" id="csEditTitle" class="form-input" value="${escapeHtml(data.title)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">กฎเหล็กป้องกันลูกค้าเคลม (บรรทัดละ 1 ข้อ)</label>
+        <textarea id="csEditRules" class="form-textarea" rows="3">${escapeHtml((data.ironRules || []).join("\n"))}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ตารางอายุอาหารในตู้โชว์ (รูปแบบต่อบรรทัด: เมนู | อุณหภูมิ | เวลาสูงสุด | สัญญาณเตือน | วินาทีจับเวลา)</label>
+        <textarea id="csEditHolding" class="form-textarea" rows="5">${escapeHtml((data.holdingRows || []).map(r => `${r.item} | ${r.temp} | ${r.maxTime} | ${r.warning} | ${r.timerSec}`).join("\n"))}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">อัตราส่วนไก่คลุกซอส</label>
+        <textarea id="csEditSauce" class="form-textarea" rows="2">${escapeHtml(data.sauceNote)}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">อัตราส่วนไก่เขย่าผง</label>
+        <textarea id="csEditShake" class="form-textarea" rows="2">${escapeHtml(data.shakeNote)}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ตารางบรรจุภัณฑ์ (รูปแบบต่อบรรทัด: ขนาดเซ็ต | ภาชนะ | การเปิดรูระบาย | เครื่องเคียง)</label>
+        <textarea id="csEditPack" class="form-textarea" rows="5">${escapeHtml((data.packagingRows || []).map(r => `${r.setSize} | ${r.container} | ${r.vent} | ${r.sides}`).join("\n"))}</textarea>
+      </div>
+    `;
+  } else {
+    bodyFieldsHtml = `
+      <div class="form-group">
+        <label class="form-label">ชื่อหัวข้อกระดาน</label>
+        <input type="text" id="csEditTitle" class="form-input" value="${escapeHtml(data.title)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">สูตรคำนวณเวลาเตรียมอาหาร (Base Prep Time)</label>
+        <input type="text" id="csEditFormula" class="form-input" value="${escapeHtml(data.formulaNote)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">ตารางตั้งค่า Prep Time (รูปแบบต่อบรรทัด: สถานการณ์ | ค่า Prep Time | การบริหารจัดการ)</label>
+        <textarea id="csEditPrepRows" class="form-textarea" rows="5">${escapeHtml((data.prepRows || []).map(r => `${r.status} | ${r.prepTime} | ${r.action}`).join("\n"))}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ไทม์ไลน์รับมือไรเดอร์มาช้า (รูปแบบต่อบรรทัด: ช่วงเวลา | หัวข้อ | รายละเอียด)</label>
+        <textarea id="csEditRiderSteps" class="form-textarea" rows="5">${escapeHtml((data.riderSteps || []).map(s => `${s.stepNum} | ${s.title} | ${s.desc}`).join("\n"))}</textarea>
+      </div>
+    `;
+  }
+
+  const modalHtml = `
+    <div class="modal-overlay" id="editCheatSheetModal" onclick="closeModal('editCheatSheetModal')">
+      <div class="modal-card" style="max-width: 720px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.25rem; color: #b45309;">✏️ แก้ไขเนื้อหา Cheat Sheet ประจำสเตชัน</h3>
+          <button onclick="closeModal('editCheatSheetModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveCheatSheetModal(event, '${tabKey}')">
+          ${bodyFieldsHtml}
+          <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="resetCheatSheetToDefault()" style="width: auto; color: #dc2626;">🔄 คืนค่าเริ่มต้น</button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="action-btn btn-secondary" onclick="closeModal('editCheatSheetModal')" style="width: auto;">ยกเลิก</button>
+              <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกการแก้ไข</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editCheatSheetModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveCheatSheetModal(event, tabKey) {
+  event.preventDefault();
+  const cfgAll = getCheatSheetsConfig();
+  const data = cfgAll[tabKey];
+  if (!data) return;
+
+  data.title = document.getElementById("csEditTitle")?.value.trim() || data.title;
+
+  if (tabKey === "frying") {
+    data.ironRules = (document.getElementById("csEditRules")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+    data.matrixRows = (document.getElementById("csEditMatrix")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { part: p[0], temp: p[1] || "165°C", timeText: p[2] || "10:00 นาที", maxBatch: p[3] || "-", coreTemp: p[4] || "≥ 74°C", timerSec: parseInt(p[5]) || 600 };
+    }).filter(Boolean);
+    data.steps = (document.getElementById("csEditSteps")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { stepNum: p[0], title: p[1] || "", desc: p[2] || "" };
+    }).filter(Boolean);
+    data.passItems = (document.getElementById("csEditPass")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+    data.failItems = (document.getElementById("csEditFail")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+    data.oilCareNote = document.getElementById("csEditOilNote")?.value.trim() || "";
+  } else if (tabKey === "packing") {
+    data.ironRules = (document.getElementById("csEditRules")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+    data.holdingRows = (document.getElementById("csEditHolding")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { item: p[0], temp: p[1] || "60°C", maxTime: p[2] || "30 นาที", warning: p[3] || "-", timerSec: parseInt(p[4]) || 1800 };
+    }).filter(Boolean);
+    data.sauceNote = document.getElementById("csEditSauce")?.value.trim() || "";
+    data.shakeNote = document.getElementById("csEditShake")?.value.trim() || "";
+    data.packagingRows = (document.getElementById("csEditPack")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { setSize: p[0], container: p[1] || "-", vent: p[2] || "-", sides: p[3] || "-" };
+    }).filter(Boolean);
+  } else {
+    data.formulaNote = document.getElementById("csEditFormula")?.value.trim() || "";
+    data.prepRows = (document.getElementById("csEditPrepRows")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { status: p[0], prepTime: p[1] || "18-20 นาที", action: p[2] || "" };
+    }).filter(Boolean);
+    data.riderSteps = (document.getElementById("csEditRiderSteps")?.value || "").split("\n").map(line => {
+      const p = line.split("|").map(x => x.trim());
+      if (!p[0]) return null;
+      return { stepNum: p[0], title: p[1] || "", desc: p[2] || "" };
+    }).filter(Boolean);
+  }
+
+  saveCheatSheetsConfig(cfgAll);
+  closeModal("editCheatSheetModal");
+  renderStationCheatSheetsView();
+  if (typeof showToast === "function") showToast("✅ บันทึกการแก้ไขเนื้อหา Cheat Sheet เรียบร้อยแล้ว!");
+}
+
+function resetCheatSheetToDefault() {
+  if (!confirm("ต้องการคืนค่าเนื้อหา Cheat Sheet ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) return;
+  saveCheatSheetsConfig(DEFAULT_CHEATSHEETS_CONFIG);
+  closeModal("editCheatSheetModal");
+  renderStationCheatSheetsView();
+  if (typeof showToast === "function") showToast("🔄 รีเซ็ต Cheat Sheet กลับเป็นค่าเริ่มต้นแล้ว");
 }
 
 // =========================================================================
@@ -724,26 +885,20 @@ function renderActiveDailyLogTabContent() {
       </div>
     `;
   } else if (activeDailyLogTab === "checklists") {
-    const openItems = [
-      { id: "op1", text: "ตรวจสายไฟ ท่อแก๊ส ระบบดูดควัน และระบบดับเพลิงอัตโนมัติพร้อมใช้งาน" },
-      { id: "op2", text: "เปิดเครื่องทอด (Deep/Pressure Fryer) ตั้งค่า Pre-heat 165°C-175°C จนไฟ READY ติด" },
-      { id: "op3", text: "ตรวจระดับน้ำมันอยู่ระหว่างขีด Min-Max น้ำมันใส ไม่เหม็นหืน ค่า TPM ≤ 25%" },
-      { id: "op4", text: "เปิดตู้โชว์อุ่นไก่ (Holding Cabinet) วอร์มอุณหภูมิแตะ ≥ 60°C" },
-      { id: "op5", text: "ตรวจเช็กอุณหภูมิตู้ชิลเลอร์เก็บไก่หมัก (2°C - 4°C) และป้าย Use-by Label ครบทุกกล่อง" },
-      { id: "op6", text: "เปิดเครื่อง POS นับเงินทอนตั้งต้นครบถ้วน และเปิดรับออร์เดอร์แอปเดลิเวอรีครบ 4 ค่าย" },
-      { id: "op7", text: "พนักงานทุกคนสวมหมวกคลุมผม หน้ากากอนามัย ผ้ากันเปื้อน เล็บสั้น และล้างมือครบ 7 ขั้นตอน" }
-    ];
-    const closeItems = [
-      { id: "cl1", text: "นับจำนวนไก่ทอดที่เหลือค้างในตู้โชว์และบันทึกลงใน Waste Log ครบถ้วน" },
-      { id: "cl2", text: "ซีลปิดฝากล่องไก่หมักและซอสทั้งหมด เก็บเข้าตู้เย็นตามผัง FIFO (ไก่ดิบอยู่ชั้นล่างสุด)" },
-      { id: "cl3", text: "ถอดล้างถาดพักไก่ ตะแกรงคลุกแป้ง อ่างสแตนเลส และเช็ดทำความสะอาดตู้โชว์อุ่นไก่" },
-      { id: "cl4", text: "เช็ดคราบน้ำมันตามซอกเครื่องทอดและใต้โต๊ะสแตนเลสจนสะอาด" },
-      { id: "cl5", text: "ขูดล้างทำความสะอาดพื้นครัวและรางระบายน้ำ ไม่ให้มีคราบมันลื่น" },
-      { id: "cl6", text: "เปิดถาดดักไขมัน (Grease Trap) ตักกากไขมันและเศษอาหารทิ้งเรียบร้อย" },
-      { id: "cl7", text: "ปิดวาล์วแก๊สหลัก ปิดเบรกเกอร์เตาทอด กระทบยอดขาย POS และล็อกประตูร้าน" }
-    ];
+    const chkCfg = getChecklistTemplatesConfig();
+    const openItems = chkCfg.opening || [];
+    const closeItems = chkCfg.closing || [];
+    const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
 
     area.innerHTML = `
+      ${isAdmin ? `
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem;" class="no-print">
+          <button class="action-btn btn-secondary" onclick="openEditChecklistTemplatesModal()" style="width: auto; padding: 0.5rem 1rem; border-color: #f59e0b; background: #fffbeb; color: #b45309; font-weight: 800;">
+            ✏️ แก้ไข/เพิ่มหัวข้อเช็คลิสต์เปิด-ปิดร้าน
+          </button>
+        </div>
+      ` : ''}
+
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
         <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem;">
           <h4 style="font-size: 1.15rem; font-weight: 800; color: #047857; margin-bottom: 1rem;">🌅 เช็คลิสต์ขั้นตอนการเปิดร้าน (${selectedOpsBranch} • ${selectedOpsDate})</h4>
@@ -751,7 +906,7 @@ function renderActiveDailyLogTabContent() {
             ${openItems.map(item => `
               <label style="display: flex; align-items: flex-start; gap: 0.75rem; background: #fff; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
                 <input type="checkbox" onchange="toggleChecklistItem('opening', '${item.id}', this.checked)" ${record.openingChecklist && record.openingChecklist[item.id] ? 'checked' : ''} style="width: 18px; height: 18px; margin-top: 0.2rem;" />
-                <span style="font-size: 0.92rem; font-weight: 600;">${item.text}</span>
+                <span style="font-size: 0.92rem; font-weight: 600;">${escapeHtml(item.text)}</span>
               </label>
             `).join("")}
           </div>
@@ -763,7 +918,7 @@ function renderActiveDailyLogTabContent() {
             ${closeItems.map(item => `
               <label style="display: flex; align-items: flex-start; gap: 0.75rem; background: #fff; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer;">
                 <input type="checkbox" onchange="toggleChecklistItem('closing', '${item.id}', this.checked)" ${record.closingChecklist && record.closingChecklist[item.id] ? 'checked' : ''} style="width: 18px; height: 18px; margin-top: 0.2rem;" />
-                <span style="font-size: 0.92rem; font-weight: 600;">${item.text}</span>
+                <span style="font-size: 0.92rem; font-weight: 600;">${escapeHtml(item.text)}</span>
               </label>
             `).join("")}
           </div>
@@ -1110,85 +1265,282 @@ function handleAddWasteLog(event) {
 }
 
 // =========================================================================
-// 3️⃣ ระบบเทรนพนักงานใหม่ 3 วัน (Onboarding) + แบบประเมิน 10 ข้อ + ข้อสอบ SOP Quiz
+// 2.5️⃣ ตัวจัดการหัวข้อเช็คลิสต์เปิด-ปิดร้าน (แก้ไขได้สำหรับ Admin)
 // =========================================================================
 
-const SOP_QUIZ_QUESTIONS = [
-  {
-    q: "1. อุณหภูมิเนื้อแกนกลางของไก่ทอดทุกชิ้นหลังทอดเสร็จ ต้องได้ไม่ต่ำกว่ากี่องศาเซลเซียส?",
-    options: ["60°C", "68°C", "≥ 74°C (165°F)", "85°C"],
-    answer: 2,
-    explain: "ตามมาตรฐานความปลอดภัยอาหาร อุณหภูมิแกนกลางเนื้อไก่ส่วนที่หนาที่สุดต้อง ≥ 74°C (165°F) ทุกแบทช์"
-  },
-  {
-    q: "2. การทอด 'สะโพกไก่ / น่องติดกระดูก' ต้องตั้งอุณหภูมิเตาทอดเท่าไหร่ และใช้เวลาทอดกี่นาที?",
-    options: ["165°C เวลา 11:30 - 12:00 นาที", "170°C เวลา 08:00 - 08:30 นาที", "175°C เวลา 04:00 - 04:30 นาที", "180°C เวลา 15:00 นาที"],
-    answer: 0,
-    explain: "สะโพกและน่องติดกระดูก ทอดที่ 165°C เวลา 11:30 - 12:00 นาที (จำกัดไม่เกิน 12 ชิ้น/รอบ)"
-  },
-  {
-    q: "3. เทคนิคการคลุกแป้งรอบที่ 2 เพื่อสร้างเกล็ดกรอบ (Fold & Roll) ต้องทำอย่างไร?",
-    options: ["บีบอัดแป้งเข้าเนื้อไก่แรงๆ 20 ครั้ง", "สอดมือตลบแป้งหมุนวน 10-12 ครั้ง แล้วสะบัดเคาะข้อมือ 2 ครั้ง", "จุ่มน้ำซ้ำ 3 รอบแล้วโยนลงหม้อทอด", "เขย่าในถุงพลาสติก 50 ครั้ง"],
-    answer: 1,
-    explain: "ห้ามบีบเนื้อไก่แรงเกินไป ให้สอดมือใต้กองแป้งตลบหมุนวน 10-12 ครั้ง แล้วสะบัดข้อมือ 2 ครั้งให้เกล็ดฟู"
-  },
-  {
-    q: "4. ไก่ทอดติดกระดูก (น่อง/สะโพก) เก็บในตู้โชว์อุ่นไก่ (Holding Cabinet 60-65°C) ได้นานสูงสุดไม่เกินกี่นาที?",
-    options: ["15 นาที", "20 นาที", "45 นาที", "2 ชั่วโมง"],
-    answer: 2,
-    explain: "ไก่ติดกระดูกเก็บในตู้ Holding ได้สูงสุด 45 นาที (วิงส์/สันใน 30 นาที, ไก่ป๊อป 20 นาที, เฟรนช์ฟรายส์ 15 นาที)"
-  },
-  {
-    q: "5. ต้องร่อนแป้งชุบทอดเพื่อคัดก้อนแป้งเปียกทิ้งทุกรอบเท่าไหร่?",
-    options: ["ทุกๆ 4 รอบการคลุก", "ร่อนสัปดาห์ละ 1 ครั้ง", "ร่อนเฉพาะตอนปิดร้าน", "ไม่ต้องร่อนเลย"],
-    answer: 0,
-    explain: "ต้องร่อนแป้งทุกๆ 4 รอบการคลุก เพื่อไม่ให้ก้อนแป้งเปียกไปเกาะตัวไก่จนแข็งกระด้าง"
-  },
-  {
-    q: "6. กฎเหล็กข้อที่ 1 ในการขอเคลมเงินชดเชยกับแอปเดลิเวอรี (เมื่อไรเดอร์ไม่มารับอาหาร) คือข้อใด?",
-    options: ["ร้านต้องรีบกดปุ่มยกเลิกออร์เดอร์เองทันที", "ร้านต้องกดปุ่ม 'อาหารพร้อมส่ง (Food Ready)' ทันทีที่ทำเสร็จ และห้ามกดยกเลิกเองเด็ดขาด", "ไม่ต้องถ่ายรูปใบเสร็จเก็บไว้", "นำไก่ที่รอนาน 1 ชั่วโมงส่งให้ไรเดอร์คนถัดไป"],
-    answer: 1,
-    explain: "ต้องกดสถานะ 'อาหารพร้อมส่ง' ก่อนที่ระบบจะตัดยกเลิก และห้ามร้านเป็นฝ่ายกดยกเลิกเองเด็ดขาด + ถ่ายรูปหลักฐานครบ 3 มุม"
-  },
-  {
-    q: "7. เมื่อตรวจวัดค่าความเสื่อมของน้ำมันทอด (TPM Test Strip) เกินกี่เปอร์เซ็นต์ จึงต้องสั่งเปลี่ยนถ่ายน้ำมันใหม่ทันที?",
-    options: ["เกิน 5%", "เกิน 10%", "เกิน 25%", "เกิน 60%"],
-    answer: 2,
-    explain: "เกณฑ์ปลดระวางน้ำมันทอดคือ ค่า TPM เกิน 25% หรือเกิดควันขาวที่อุณหภูมิต่ำกว่า 170°C"
-  },
-  {
-    q: "8. อุณหภูมิเนื้อไก่สดตอนตรวจรับมอบจากซัพพลายเออร์ ต้องไม่เกินกี่องศาเซลเซียส?",
-    options: ["ไม่เกิน 4°C", "ไม่เกิน 15°C", "ไม่เกิน 25°C", "เท่าไหร่ก็ได้"],
-    answer: 0,
-    explain: "เนื้อไก่สดตอนรับมอบต้องอุณหภูมิ ≤ 4°C เพื่อป้องกันการเจริญเติบโตของเชื้อแบคทีเรีย"
+const DEFAULT_CHECKLIST_TEMPLATES = {
+  opening: [
+    { id: "op1", text: "ตรวจสายไฟ ท่อแก๊ส ระบบดูดควัน และระบบดับเพลิงอัตโนมัติพร้อมใช้งาน" },
+    { id: "op2", text: "เปิดเครื่องทอด (Deep/Pressure Fryer) ตั้งค่า Pre-heat 165°C-175°C จนไฟ READY ติด" },
+    { id: "op3", text: "ตรวจระดับน้ำมันอยู่ระหว่างขีด Min-Max น้ำมันใส ไม่เหม็นหืน ค่า TPM ≤ 25%" },
+    { id: "op4", text: "เปิดตู้โชว์อุ่นไก่ (Holding Cabinet) วอร์มอุณหภูมิแตะ ≥ 60°C" },
+    { id: "op5", text: "ตรวจเช็กอุณหภูมิตู้ชิลเลอร์เก็บไก่หมัก (2°C - 4°C) และป้าย Use-by Label ครบทุกกล่อง" },
+    { id: "op6", text: "เปิดเครื่อง POS นับเงินทอนตั้งต้นครบถ้วน และเปิดรับออร์เดอร์แอปเดลิเวอรีครบ 4 ค่าย" },
+    { id: "op7", text: "พนักงานทุกคนสวมหมวกคลุมผม หน้ากากอนามัย ผ้ากันเปื้อน เล็บสั้น และล้างมือครบ 7 ขั้นตอน" }
+  ],
+  closing: [
+    { id: "cl1", text: "นับจำนวนไก่ทอดที่เหลือค้างในตู้โชว์และบันทึกลงใน Waste Log ครบถ้วน" },
+    { id: "cl2", text: "ซีลปิดฝากล่องไก่หมักและซอสทั้งหมด เก็บเข้าตู้เย็นตามผัง FIFO (ไก่ดิบอยู่ชั้นล่างสุด)" },
+    { id: "cl3", text: "ถอดล้างถาดพักไก่ ตะแกรงคลุกแป้ง อ่างสแตนเลส และเช็ดทำความสะอาดตู้โชว์อุ่นไก่" },
+    { id: "cl4", text: "เช็ดคราบน้ำมันตามซอกเครื่องทอดและใต้โต๊ะสแตนเลสจนสะอาด" },
+    { id: "cl5", text: "ขูดล้างทำความสะอาดพื้นครัวและรางระบายน้ำ ไม่ให้มีคราบมันลื่น" },
+    { id: "cl6", text: "เปิดถาดดักไขมัน (Grease Trap) ตักกากไขมันและเศษอาหารทิ้งเรียบร้อย" },
+    { id: "cl7", text: "ปิดวาล์วแก๊สหลัก ปิดเบรกเกอร์เตาทอด กระทบยอดขาย POS และล็อกประตูร้าน" }
+  ]
+};
+
+function getChecklistTemplatesConfig() {
+  const local = localStorage.getItem("PKT_CHECKLIST_TEMPLATES_V33");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed && Array.isArray(parsed.opening) && Array.isArray(parsed.closing)) return parsed;
+    } catch (e) {}
   }
-];
+  return JSON.parse(JSON.stringify(DEFAULT_CHECKLIST_TEMPLATES));
+}
+
+function saveChecklistTemplatesConfig(cfg) {
+  localStorage.setItem("PKT_CHECKLIST_TEMPLATES_V33", JSON.stringify(cfg));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "checklist_templates", cfg);
+  }
+}
+
+function openEditChecklistTemplatesModal() {
+  const cfg = getChecklistTemplatesConfig();
+  const modalHtml = `
+    <div class="modal-overlay" id="editChecklistTemplatesModal" onclick="closeModal('editChecklistTemplatesModal')">
+      <div class="modal-card" style="max-width: 680px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #b45309;">✏️ แก้ไขหัวข้อเช็คลิสต์เปิดร้าน & ปิดร้าน</h3>
+          <button onclick="closeModal('editChecklistTemplatesModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveChecklistTemplatesModal(event)">
+          <div class="form-group">
+            <label class="form-label">🌅 หัวข้อเช็คลิสต์เปิดร้าน (บรรทัดละ 1 ข้อ)</label>
+            <textarea id="editOpenChecklistText" class="form-textarea" rows="7">${escapeHtml((cfg.opening || []).map(i => i.text).join("\n"))}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🌙 หัวข้อเช็คลิสต์ปิดร้าน (บรรทัดละ 1 ข้อ)</label>
+            <textarea id="editCloseChecklistText" class="form-textarea" rows="7">${escapeHtml((cfg.closing || []).map(i => i.text).join("\n"))}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editChecklistTemplatesModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกหัวข้อเช็คลิสต์</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editChecklistTemplatesModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveChecklistTemplatesModal(event) {
+  event.preventDefault();
+  const openLines = (document.getElementById("editOpenChecklistText")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  const closeLines = (document.getElementById("editCloseChecklistText")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  saveChecklistTemplatesConfig({
+    opening: openLines.map((txt, idx) => ({ id: `op${idx + 1}`, text: txt })),
+    closing: closeLines.map((txt, idx) => ({ id: `cl${idx + 1}`, text: txt }))
+  });
+  closeModal("editChecklistTemplatesModal");
+  renderDailyOperationsLogsView();
+  if (typeof showToast === "function") showToast("✅ บันทึกหัวข้อเช็คลิสต์เปิด-ปิดร้านเรียบร้อยแล้ว!");
+}
+
+// =========================================================================
+// 3️⃣ ระบบเทรนพนักงานใหม่ (Onboarding) + แบบประเมินผ่านโปร + ข้อสอบ SOP Quiz (แก้ไขได้ทุกส่วน 100%)
+// =========================================================================
+
+const DEFAULT_TRAINING_CONFIG = {
+  headerTitle: "ระบบเทรนพนักงานใหม่ให้เป็นงานใน 3 วัน & สอบวัดผลมาตรฐาน SOP",
+  headerSubtitle: "โมเดลการฝึก: ดูภาพ/คลิปสั้น (Watch) ➔ ทำตามพี่เลี้ยง (Shadow) ➔ ลองทำเดี่ยว (Perform) ➔ ประเมินผ่านโปร (Verify)",
+  passingScorePercent: 80,
+  goldenRulesTitle: "🏆 กฎทอง 4 ข้อเพื่อให้การเทรนพนักงานใหม่ได้ผลจริง:",
+  goldenRules: [
+    "1. ห้ามให้อ่านตัวหนังสือเกิน 15 นาที: ให้ดูรูป/คลิปสั้น 10 วินาทีแล้วลงมือขยับกล้ามเนื้อทำตามทันที",
+    "2. ติด Cheat Sheet ระดับสายตา: แปะตาราง Frying Matrix และรูป Pass/Fail ข้างเตาทอดและโต๊ะแพ็ก",
+    "3. ระบบพี่เลี้ยง 1:1 (Buddy): ช่วง 3 วันแรกพี่เลี้ยงต้องประกบเพื่อหยุดความผิดพลาดก่อนไก่เสีย",
+    "4. ผิดต้องชี้ที่รูป ไม่ใช่ดุตัวบุคคล: พาไปเทียบภาพ Pass vs Fail แล้วถามให้พนักงานสังเกตจุดต่างด้วยตนเอง"
+  ],
+  days: [
+    {
+      id: "day-1",
+      title: "🟢 วันที่ 1: สุขอนามัย การเตรียมของ & ปิดร้าน",
+      color: "#059669",
+      goal: "คุ้นเคยพื้นที่ร้าน วินัย FIFO และเก็บร้านสะอาด 100%",
+      tasks: [
+        "ช่วงเช้า (ชม. 1-3): ดูรูปการแต่งกาย ล้างมือ 7 ขั้นตอน จัดตู้แช่ FIFO (ไก่ดิบล่างสุด) และฝึกตรวจรับไก่สด ≤ 4°C",
+        "ช่วงบ่าย (ชม. 4-6): ลงมือชั่งผงหมัก บากเนื้อสะโพก 2 รอย นวดไก่ 3 นาที และติดป้าย Use-by Label",
+        "ช่วงเย็น (ชม. 7-8): เดินตรวจความสะอาดตาม Checklist ปิดร้าน ล้างซอกเตาทอดและตักบ่อดักไขมัน"
+      ]
+    },
+    {
+      id: "day-2",
+      title: "🟠 วันที่ 2: สเตชันทอด (Frying Station)",
+      color: "#d97706",
+      goal: "ทอดไก่สีทอง เกล็ดฟู สุกทั่วถึง ≥ 74°C",
+      tasks: [
+        "ช่วงเช้า (ชม. 1-3): ซ้อมท่าตลบแป้ง Fold & Roll 10-12 ครั้ง + สะบัดข้อมือ 2 ครั้ง และท่องจำตาราง Frying Matrix",
+        "ช่วงบ่าย (ชม. 4-6): ลงเตาทอดจริง 3 แบทช์ (สะโพก, ปีก, ไก่ป๊อป) หย่อนไก่จากใกล้ตัวไปไกลตัว + วัดโพรบ ≥ 74°C",
+        "ช่วงเย็น (ชม. 7-8): เทียบไก่ทอดจริงกับกระดาน Pass vs Fail ฝึกช้อนกากแป้ง กรองน้ำมัน และวัดค่า TPM"
+      ]
+    },
+    {
+      id: "day-3",
+      title: "🔵 วันที่ 3: ตู้โชว์ แพ็กเกจ & สอบ Solo Run",
+      color: "#2563eb",
+      goal: "จัดออร์เดอร์ไม่ผิด คัดของหมดอายุตรงเวลา",
+      tasks: [
+        "ช่วงเช้า (ชม. 1-3): คุมอายุอาหารในตู้โชว์ (45/30/20/15 นาที) ฝึกคลุกซอสใน 10 วิ เขย่าผง และเปิดรูระบายกล่อง",
+        "ช่วงบ่าย (ชม. 4-6): ยืนสเตชันเดี่ยวช่วง Off-Peak (Solo Run) โดยมีพี่เลี้ยงดูห่างๆ",
+        "ช่วงเย็น (ชม. 7-8): สอบทำ Quiz ออนไลน์ และผู้จัดการประเมิน 3-Day Certification 10 ข้อเพื่อมอบป้ายชื่อ"
+      ]
+    }
+  ],
+  cameraGuides: [
+    {
+      angle: "👁️ POV (Point of View - มุมสายตาคนทำ)",
+      suitableFor: "งานที่ต้องใช้ 2 มือ หรือจำจังหวะการเคลื่อนไหว (คลิป 5-10 วิ / GIF Loop)",
+      example: "จังหวะสองมือตลบแป้ง Fold & Roll 10-12 ครั้ง, การสะบัดข้อมือ 2 ครั้ง, การหย่อนไก่ลงเตา"
+    },
+    {
+      angle: "📐 Top-down (มุมมองจากด้านบน 90°)",
+      suitableFor: "งานจัดวางสัดส่วน การเรียงลำดับ หรือเช็กลิสต์",
+      example: "การวางไก่และเครื่องเคียงลงกล่องเดลิเวอรี, ผังการจัดโต๊ะแพ็ก One-Way Flow"
+    },
+    {
+      angle: "🔍 Side-Angle / Close-up (มุมข้างระยะใกล้)",
+      suitableFor: "งานที่ต้องการดูระดับ ความลึก หรือตำแหน่งจุดวิกฤต",
+      example: "การดูระดับน้ำมัน Min-Max, ตำแหน่งเสียบโพรบวัดอุณหภูมิแกนกลางสะโพกไก่ (≥74°C)"
+    }
+  ],
+  quizQuestions: [
+    {
+      q: "1. อุณหภูมิเนื้อแกนกลางของไก่ทอดทุกชิ้นหลังทอดเสร็จ ต้องได้ไม่ต่ำกว่ากี่องศาเซลเซียส?",
+      options: ["60°C", "68°C", "≥ 74°C (165°F)", "85°C"],
+      answer: 2,
+      explain: "ตามมาตรฐานความปลอดภัยอาหาร อุณหภูมิแกนกลางเนื้อไก่ส่วนที่หนาที่สุดต้อง ≥ 74°C (165°F) ทุกแบทช์"
+    },
+    {
+      q: "2. การทอด 'สะโพกไก่ / น่องติดกระดูก' ต้องตั้งอุณหภูมิเตาทอดเท่าไหร่ และใช้เวลาทอดกี่นาที?",
+      options: ["165°C เวลา 11:30 - 12:00 นาที", "170°C เวลา 08:00 - 08:30 นาที", "175°C เวลา 04:00 - 04:30 นาที", "180°C เวลา 15:00 นาที"],
+      answer: 0,
+      explain: "สะโพกและน่องติดกระดูก ทอดที่ 165°C เวลา 11:30 - 12:00 นาที (จำกัดไม่เกิน 12 ชิ้น/รอบ)"
+    },
+    {
+      q: "3. เทคนิคการคลุกแป้งรอบที่ 2 เพื่อสร้างเกล็ดกรอบ (Fold & Roll) ต้องทำอย่างไร?",
+      options: ["บีบอัดแป้งเข้าเนื้อไก่แรงๆ 20 ครั้ง", "สอดมือตลบแป้งหมุนวน 10-12 ครั้ง แล้วสะบัดเคาะข้อมือ 2 ครั้ง", "จุ่มน้ำซ้ำ 3 รอบแล้วโยนลงหม้อทอด", "เขย่าในถุงพลาสติก 50 ครั้ง"],
+      answer: 1,
+      explain: "ห้ามบีบเนื้อไก่แรงเกินไป ให้สอดมือใต้กองแป้งตลบหมุนวน 10-12 ครั้ง แล้วสะบัดข้อมือ 2 ครั้งให้เกล็ดฟู"
+    },
+    {
+      q: "4. ไก่ทอดติดกระดูก (น่อง/สะโพก) เก็บในตู้โชว์อุ่นไก่ (Holding Cabinet 60-65°C) ได้นานสูงสุดไม่เกินกี่นาที?",
+      options: ["15 นาที", "20 นาที", "45 นาที", "2 ชั่วโมง"],
+      answer: 2,
+      explain: "ไก่ติดกระดูกเก็บในตู้ Holding ได้สูงสุด 45 นาที (วิงส์/สันใน 30 นาที, ไก่ป๊อป 20 นาที, เฟรนช์ฟรายส์ 15 นาที)"
+    },
+    {
+      q: "5. ต้องร่อนแป้งชุบทอดเพื่อคัดก้อนแป้งเปียกทิ้งทุกรอบเท่าไหร่?",
+      options: ["ทุกๆ 4 รอบการคลุก", "ร่อนสัปดาห์ละ 1 ครั้ง", "ร่อนเฉพาะตอนปิดร้าน", "ไม่ต้องร่อนเลย"],
+      answer: 0,
+      explain: "ต้องร่อนแป้งทุกๆ 4 รอบการคลุก เพื่อไม่ให้ก้อนแป้งเปียกไปเกาะตัวไก่จนแข็งกระด้าง"
+    },
+    {
+      q: "6. กฎเหล็กข้อที่ 1 ในการขอเคลมเงินชดเชยกับแอปเดลิเวอรี (เมื่อไรเดอร์ไม่มารับอาหาร) คือข้อใด?",
+      options: ["ร้านต้องรีบกดปุ่มยกเลิกออร์เดอร์เองทันที", "ร้านต้องกดปุ่ม 'อาหารพร้อมส่ง (Food Ready)' ทันทีที่ทำเสร็จ และห้ามกดยกเลิกเองเด็ดขาด", "ไม่ต้องถ่ายรูปใบเสร็จเก็บไว้", "นำไก่ที่รอนาน 1 ชั่วโมงส่งให้ไรเดอร์คนถัดไป"],
+      answer: 1,
+      explain: "ต้องกดสถานะ 'อาหารพร้อมส่ง' ก่อนที่ระบบจะตัดยกเลิก และห้ามร้านเป็นฝ่ายกดยกเลิกเองเด็ดขาด + ถ่ายรูปหลักฐานครบ 3 มุม"
+    },
+    {
+      q: "7. เมื่อตรวจวัดค่าความเสื่อมของน้ำมันทอด (TPM Test Strip) เกินกี่เปอร์เซ็นต์ จึงต้องสั่งเปลี่ยนถ่ายน้ำมันใหม่ทันที?",
+      options: ["เกิน 5%", "เกิน 10%", "เกิน 25%", "เกิน 60%"],
+      answer: 2,
+      explain: "เกณฑ์ปลดระวางน้ำมันทอดคือ ค่า TPM เกิน 25% หรือเกิดควันขาวที่อุณหภูมิต่ำกว่า 170°C"
+    },
+    {
+      q: "8. อุณหภูมิเนื้อไก่สดตอนตรวจรับมอบจากซัพพลายเออร์ ต้องไม่เกินกี่องศาเซลเซียส?",
+      options: ["ไม่เกิน 4°C", "ไม่เกิน 15°C", "ไม่เกิน 25°C", "เท่าไหร่ก็ได้"],
+      answer: 0,
+      explain: "เนื้อไก่สดตอนรับมอบต้องอุณหภูมิ ≤ 4°C เพื่อป้องกันการเจริญเติบโตของเชื้อแบคทีเรีย"
+    }
+  ],
+  certItems: [
+    "1. แต่งกายถูกระเบียบ 100% ล้างมือครบ 7 ขั้นตอน และไม่สัมผัสอาหารพร้อมทานด้วยมือเปล่า",
+    "2. ตรวจรับไก่สดวัดอุณหภูมิ ≤ 4°C และจัดเรียงเข้าตู้แช่ตามหลัก FIFO ได้ถูกต้อง",
+    "3. ชั่งตวงผงหมัก บากเนื้อสะโพกไก่ 2 รอย และติดสติกเกอร์ Use-by Label ครบทุกกล่อง",
+    "4. คลุกแป้งด้วยเทคนิค Fold & Roll 10-12 ครั้ง + สะบัดข้อมือ 2 ครั้ง ได้เกล็ดแป้งฟูสวยไม่เป็นก้อนแข็ง",
+    "5. ร่อนแป้งทุกๆ 4 รอบการคลุก และหย่อนไก่ลงเตาทอดจากด้านใกล้ตัวไปไกลตัวได้อย่างปลอดภัย",
+    "6. ตั้งอุณหภูมิและเวลาทอดตามตาราง Frying Matrix ได้แม่นยำโดยไม่ต้องก้มหาเอกสาร",
+    "7. เขย่าสะเด็ดน้ำมัน 30 วินาที และเสียบโพรบวัดอุณหภูมิแกนกลางเนื้อไก่ได้ ≥ 74°C ทุกแบทช์",
+    "8. คลุกซอสเสร็จภายใน 10 วินาที / เขย่าผงครบจังหวะ และเปิดรูระบายไอน้ำข้างกล่องทุกใบ",
+    "9. ตรวจบิล POS เทียบสินค้าแบบ Tick-off ครบถ้วน แยกถุงเครื่องดื่มเย็น และติดสติกเกอร์ Tamper Seal",
+    "10. ช้อนกากแป้ง กรองน้ำมัน วัดค่า TPM บันทึก Waste Log และทำ Deep Clean ปิดร้านได้ครบสมบูรณ์"
+  ]
+};
+
+function getTrainingConfigData() {
+  const local = localStorage.getItem("PKT_TRAINING_CONFIG_V33");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed && Array.isArray(parsed.days) && Array.isArray(parsed.quizQuestions)) return parsed;
+    } catch (e) {}
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_TRAINING_CONFIG));
+}
+
+function saveTrainingConfigData(cfg) {
+  localStorage.setItem("PKT_TRAINING_CONFIG_V33", JSON.stringify(cfg));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "training_config", cfg);
+  }
+}
 
 function renderOnboardingAndQuizView() {
   const container = document.getElementById("sopContentArea");
   if (!container) return;
 
+  const tCfg = getTrainingConfigData();
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
+
   let html = `
     <div class="sop-detail-view">
-      <div style="margin-bottom: 1.5rem;">
-        <span class="sop-category-tag">🎓 3-DAY FAST-TRACK ONBOARDING & LMS</span>
-        <h2 style="font-size: 1.6rem; color: #b45309; font-weight: 800; margin-top: 0.25rem;">
-          ระบบเทรนพนักงานใหม่ให้เป็นงานใน 3 วัน & สอบวัดผลมาตรฐาน SOP
-        </h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-          โมเดลการฝึก: ดูภาพ/คลิปสั้น (Watch) ➔ ทำตามพี่เลี้ยง (Shadow) ➔ ลองทำเดี่ยว (Perform) ➔ ประเมินผ่านโปร (Verify)
-        </p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <span class="sop-category-tag">🎓 3-DAY FAST-TRACK ONBOARDING & LMS</span>
+          <h2 style="font-size: 1.6rem; color: #b45309; font-weight: 800; margin-top: 0.25rem;">
+            ${escapeHtml(tCfg.headerTitle || DEFAULT_TRAINING_CONFIG.headerTitle)}
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">
+            ${escapeHtml(tCfg.headerSubtitle || DEFAULT_TRAINING_CONFIG.headerSubtitle)}
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" class="no-print">
+          ${isAdmin ? `
+            <button class="action-btn btn-secondary" onclick="resetTrainingConfigToDefault()" style="width: auto; padding: 0.5rem 0.9rem; color: #dc2626;">
+              🔄 รีเซ็ตค่าเริ่มต้นระบบเทรน
+            </button>
+          ` : ''}
+          <button class="action-btn btn-secondary" onclick="window.print()" style="width: auto; padding: 0.5rem 1rem;">
+            🖨️ พิมพ์หน้านี้ (A4)
+          </button>
+        </div>
       </div>
 
       <div class="ops-tabs-bar no-print">
         <button class="ops-tab-btn ${activeTrainingTab === 'plan-3day' ? 'active' : ''}" onclick="switchTrainingTab('plan-3day')">
-          📅 1. ตารางเทรน 3 วัน & กฎการถ่ายสื่อ SOP
+          📅 1. ตารางเทรน (${(tCfg.days || []).length} วัน) & กฎการถ่ายสื่อ SOP
         </button>
         <button class="ops-tab-btn ${activeTrainingTab === 'quiz' ? 'active' : ''}" onclick="switchTrainingTab('quiz')">
-          📝 2. แบบทดสอบความรู้ SOP (Staff Quiz)
+          📝 2. แบบทดสอบความรู้ SOP (${(tCfg.quizQuestions || []).length} ข้อ)
         </button>
         <button class="ops-tab-btn ${activeTrainingTab === 'cert-10' ? 'active' : ''}" onclick="switchTrainingTab('cert-10')">
-          🏅 3. ใบประเมินผ่านโปร 10 ข้อ (สำหรับผู้จัดการ)
+          🏅 3. ใบประเมินผ่านโปร (${(tCfg.certItems || []).length} ข้อ)
         </button>
       </div>
 
@@ -1210,56 +1562,69 @@ function renderActiveTrainingTabContent() {
   if (!area) return;
 
   const progress = getOnboardingProgressData();
+  const tCfg = getTrainingConfigData();
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
 
   if (activeTrainingTab === "plan-3day") {
     area.innerHTML = `
+      <!-- กฎทองของการเทรน -->
       <div class="iron-rules-box" style="margin-bottom: 1.5rem;">
-        <div style="font-weight: 900; color: #b45309; font-size: 1.05rem; margin-bottom: 0.5rem;">🏆 กฎทอง 4 ข้อเพื่อให้การเทรนพนักงานใหม่ 3 วันได้ผลจริง:</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <div style="font-weight: 900; color: #b45309; font-size: 1.05rem;">${escapeHtml(tCfg.goldenRulesTitle || '🏆 กฎทองเพื่อให้การเทรนพนักงานใหม่ได้ผลจริง:')}</div>
+          ${isAdmin ? `
+            <button class="action-btn btn-secondary no-print" onclick="openEditGoldenRulesAndCameraModal()" style="width: auto; padding: 0.35rem 0.85rem; font-size: 0.8rem; border-color: #f59e0b; background: #ffffff; color: #b45309; font-weight: 800;">
+              ✏️ แก้ไขกฎทอง & ตารางมุมกล้อง
+            </button>
+          ` : ''}
+        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem;">
-          <div class="iron-rule-card"><strong>1. ห้ามให้อ่านตัวหนังสือเกิน 15 นาที:</strong> ให้ดูรูป/คลิปสั้น 10 วินาทีแล้วลงมือขยับกล้ามเนื้อทำตามทันที</div>
-          <div class="iron-rule-card"><strong>2. ติด Cheat Sheet ระดับสายตา:</strong> แปะตาราง Frying Matrix และรูป Pass/Fail ข้างเตาทอดและโต๊ะแพ็ก</div>
-          <div class="iron-rule-card"><strong>3. ระบบพี่เลี้ยง 1:1 (Buddy):</strong> ช่วง 3 วันแรกพี่เลี้ยงต้องประกบเพื่อหยุดความผิดพลาดก่อนไก่เสีย</div>
-          <div class="iron-rule-card"><strong>4. ผิดต้องชี้ที่รูป ไม่ใช่ดุตัวบุคคล:</strong> พาไปเทียบภาพ Pass vs Fail แล้วถามให้พนักงานสังเกตจุดต่างด้วยตนเอง</div>
+          ${(tCfg.goldenRules || []).map(rule => `
+            <div class="iron-rule-card">${escapeHtml(rule)}</div>
+          `).join("")}
         </div>
       </div>
 
-      <h4 class="cheat-section-title">📅 แผนการเทรน Onboarding 3 วัน (Fast-Track Training Plan)</h4>
+      <!-- แผนการเทรนรายวัน -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <h4 class="cheat-section-title" style="margin: 0;">📅 แผนการเทรนพนักงานใหม่ (Fast-Track Training Plan)</h4>
+        ${isAdmin ? `
+          <button class="action-btn btn-primary no-print" onclick="openEditTrainingDayModal(-1)" style="width: auto; padding: 0.45rem 1rem; font-size: 0.85rem;">
+            ➕ เพิ่มวันเทรนใหม่
+          </button>
+        ` : ''}
+      </div>
+
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
-        <!-- Day 1 -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-top: 4px solid #059669; border-radius: 14px; padding: 1.25rem;">
-          <div style="font-weight: 900; color: #059669; font-size: 1.1rem; margin-bottom: 0.5rem;">🟢 วันที่ 1: สุขอนามัย การเตรียมของ & ปิดร้าน</div>
-          <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">เป้าหมาย: คุ้นเคยพื้นที่ร้าน วินัย FIFO และเก็บร้านสะอาด 100%</p>
-          <ul style="padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.65; color: var(--text-main);">
-            <li><strong>ช่วงเช้า (ชม. 1-3):</strong> ดูรูปการแต่งกาย ล้างมือ 7 ขั้นตอน จัดตู้แช่ FIFO (ไก่ดิบล่างสุด) และฝึกตรวจรับไก่สด ≤ 4°C</li>
-            <li><strong>ช่วงบ่าย (ชม. 4-6):</strong> ลงมือชั่งผงหมัก บากเนื้อสะโพก 2 รอย นวดไก่ 3 นาที และติดป้าย Use-by Label</li>
-            <li><strong>ช่วงเย็น (ชม. 7-8):</strong> เดินตรวจความสะอาดตาม Checklist ปิดร้าน ล้างซอกเตาทอดและตักบ่อดักไขมัน</li>
-          </ul>
-        </div>
-
-        <!-- Day 2 -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-top: 4px solid #d97706; border-radius: 14px; padding: 1.25rem;">
-          <div style="font-weight: 900; color: #d97706; font-size: 1.1rem; margin-bottom: 0.5rem;">🟠 วันที่ 2: สเตชันทอด (Frying Station)</div>
-          <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">เป้าหมาย: ทอดไก่สีทอง เกล็ดฟู สุกทั่วถึง ≥ 74°C</p>
-          <ul style="padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.65; color: var(--text-main);">
-            <li><strong>ช่วงเช้า (ชม. 1-3):</strong> ซ้อมท่าตลบแป้ง Fold & Roll 10-12 ครั้ง + สะบัดข้อมือ 2 ครั้ง และท่องจำตาราง Frying Matrix</li>
-            <li><strong>ช่วงบ่าย (ชม. 4-6):</strong> ลงเตาทอดจริง 3 แบทช์ (สะโพก, ปีก, ไก่ป๊อป) หย่อนไก่จากใกล้ตัวไปไกลตัว + วัดโพรบ ≥ 74°C</li>
-            <li><strong>ช่วงเย็น (ชม. 7-8):</strong> เทียบไก่ทอดจริงกับกระดาน Pass vs Fail ฝึกช้อนกากแป้ง กรองน้ำมัน และวัดค่า TPM</li>
-          </ul>
-        </div>
-
-        <!-- Day 3 -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-top: 4px solid #2563eb; border-radius: 14px; padding: 1.25rem;">
-          <div style="font-weight: 900; color: #2563eb; font-size: 1.1rem; margin-bottom: 0.5rem;">🔵 วันที่ 3: ตู้โชว์ แพ็กเกจ & สอบ Solo Run</div>
-          <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">เป้าหมาย: จัดออร์เดอร์ไม่ผิด คัดของหมดอายุตรงเวลา</p>
-          <ul style="padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.65; color: var(--text-main);">
-            <li><strong>ช่วงเช้า (ชม. 1-3):</strong> คุมอายุอาหารในตู้โชว์ (45/30/20/15 นาที) ฝึกคลุกซอสใน 10 วิ เขย่าผง และเปิดรูระบายกล่อง</li>
-            <li><strong>ช่วงบ่าย (ชม. 4-6):</strong> ยืนสเตชันเดี่ยวช่วง Off-Peak (Solo Run) โดยมีพี่เลี้ยงดูห่างๆ</li>
-            <li><strong>ช่วงเย็น (ชม. 7-8):</strong> สอบทำ Quiz ออนไลน์ และผู้จัดการประเมิน 3-Day Certification 10 ข้อเพื่อมอบป้ายชื่อ</li>
-          </ul>
-        </div>
+        ${(tCfg.days || []).map((day, dIdx) => `
+          <div style="background: #f8fafc; border: 1px solid var(--border-color); border-top: 4px solid ${day.color || '#059669'}; border-radius: 14px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <div style="font-weight: 900; color: ${day.color || '#059669'}; font-size: 1.1rem;">${escapeHtml(day.title)}</div>
+                ${isAdmin ? `
+                  <div class="no-print" style="display: flex; gap: 0.3rem; flex-shrink: 0;">
+                    <button onclick="openEditTrainingDayModal(${dIdx})" style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:0.2rem 0.5rem; font-size:0.75rem; font-weight:700; cursor:pointer; color:#0f172a;">✏️ แก้ไข</button>
+                    <button onclick="deleteTrainingDayItem(${dIdx})" style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:0.2rem 0.45rem; font-size:0.75rem; font-weight:700; cursor:pointer; color:#dc2626;">🗑️</button>
+                  </div>
+                ` : ''}
+              </div>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">🎯 เป้าหมาย: ${escapeHtml(day.goal)}</p>
+              <ul style="padding-left: 1.1rem; font-size: 0.88rem; line-height: 1.65; color: var(--text-main);">
+                ${(day.tasks || []).map(t => `<li style="margin-bottom: 0.35rem;">${escapeHtml(t)}</li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        `).join("")}
       </div>
 
-      <h4 class="cheat-section-title">📸 คู่มือการถ่ายภาพและวิดีโอสั้นประกอบ SOP ร้านผมขอทอด (Zero-Error Visual Guide)</h4>
+      <!-- ตารางคู่มือการถ่ายภาพและวิดีโอสั้น -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+        <h4 class="cheat-section-title" style="margin: 0;">📸 คู่มือการถ่ายภาพและวิดีโอสั้นประกอบ SOP ร้านผมขอทอด (Zero-Error Visual Guide)</h4>
+        ${isAdmin ? `
+          <button class="action-btn btn-secondary no-print" onclick="openEditGoldenRulesAndCameraModal()" style="width: auto; padding: 0.35rem 0.85rem; font-size: 0.8rem;">
+            ✏️ แก้ไขตารางมุมกล้อง
+          </button>
+        ` : ''}
+      </div>
       <div style="overflow-x: auto;">
         <table class="matrix-table-large">
           <thead>
@@ -1270,49 +1635,57 @@ function renderActiveTrainingTabContent() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>👁️ POV (Point of View - มุมสายตาคนทำ)</strong></td>
-              <td>งานที่ต้องใช้ 2 มือ หรือจำจังหวะการเคลื่อนไหว (คลิป 5-10 วิ / GIF Loop)</td>
-              <td>จังหวะสองมือตลบแป้ง Fold & Roll 10-12 ครั้ง, การสะบัดข้อมือ 2 ครั้ง, การหย่อนไก่ลงเตา</td>
-            </tr>
-            <tr>
-              <td><strong>📐 Top-down (มุมมองจากด้านบน 90°)</strong></td>
-              <td>งานจัดวางสัดส่วน การเรียงลำดับ หรือเช็กลิสต์</td>
-              <td>การวางไก่และเครื่องเคียงลงกล่องเดลิเวอรี, ผังการจัดโต๊ะแพ็ก One-Way Flow</td>
-            </tr>
-            <tr>
-              <td><strong>🔍 Side-Angle / Close-up (มุมข้างระยะใกล้)</strong></td>
-              <td>งานที่ต้องการดูระดับ ความลึก หรือตำแหน่งจุดวิกฤต</td>
-              <td>การดูระดับน้ำมัน Min-Max, ตำแหน่งเสียบโพรบวัดอุณหภูมิแกนกลางสะโพกไก่ (≥74°C)</td>
-            </tr>
+            ${(tCfg.cameraGuides || []).map(cg => `
+              <tr>
+                <td><strong>${escapeHtml(cg.angle)}</strong></td>
+                <td>${escapeHtml(cg.suitableFor)}</td>
+                <td>${escapeHtml(cg.example)}</td>
+              </tr>
+            `).join("")}
           </tbody>
         </table>
       </div>
     `;
   } else if (activeTrainingTab === "quiz") {
+    const questions = tCfg.quizQuestions || [];
+    const passPct = tCfg.passingScorePercent || 80;
+
     area.innerHTML = `
       <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h4 style="font-size: 1.15rem; font-weight: 800; color: #b45309;">📝 แบบทดสอบมาตรฐาน SOP แฟรนไชส์ร้านผมขอทอด (เกณฑ์ผ่าน 80% ขึ้นไป)</h4>
-            <p style="font-size: 0.85rem; color: #92400e;">พนักงานใหม่ทุกคนต้องทำแบบทดสอบนี้ให้ผ่านเกณฑ์ก่อนยืนสเตชันจริงในวันที่ 3</p>
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: #b45309;">📝 แบบทดสอบมาตรฐาน SOP แฟรนไชส์ร้านผมขอทอด (เกณฑ์ผ่าน ${passPct}% ขึ้นไป)</h4>
+            <p style="font-size: 0.85rem; color: #92400e;">พนักงานใหม่ทุกคนต้องทำแบบทดสอบนี้ให้ผ่านเกณฑ์ก่อนยืนสเตชันจริง (${questions.length} ข้อ)</p>
           </div>
-          <div style="display: flex; gap: 0.6rem; align-items: center;">
+          <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <input type="text" id="quizStaffNameInput" class="form-input" placeholder="ระบุชื่อพนักงานผู้เข้าสอบ *" style="width: 210px; background: #fff;" />
+            ${isAdmin ? `
+              <button type="button" class="action-btn btn-primary no-print" onclick="openEditQuizQuestionModal(-1)" style="width: auto; padding: 0.55rem 1rem; font-size: 0.85rem;">
+                ➕ เพิ่มข้อสอบใหม่
+              </button>
+            ` : ''}
           </div>
         </div>
       </div>
 
       <form onsubmit="handleSubmitSopQuiz(event)">
         <div style="display: flex; flex-direction: column; gap: 1.1rem; margin-bottom: 1.5rem;">
-          ${SOP_QUIZ_QUESTIONS.map((qItem, qIdx) => `
+          ${questions.map((qItem, qIdx) => `
             <div class="quiz-question-card" id="quizCard_${qIdx}" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
-              <div style="font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 0.75rem;">${qItem.q}</div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${escapeHtml(qItem.q)}</div>
+                ${isAdmin ? `
+                  <div class="no-print" style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+                    <button type="button" onclick="openEditQuizQuestionModal(${qIdx})" style="background:#fffbeb; border:1px solid #fcd34d; color:#b45309; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.76rem; font-weight:800; cursor:pointer;">✏️ แก้ไขข้อนี้</button>
+                    <button type="button" onclick="deleteQuizQuestionItem(${qIdx})" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:6px; padding:0.25rem 0.5rem; font-size:0.76rem; font-weight:800; cursor:pointer;">🗑️ ลบ</button>
+                  </div>
+                ` : ''}
+              </div>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.6rem;">
-                ${qItem.options.map((opt, optIdx) => `
+                ${(qItem.options || []).map((opt, optIdx) => `
                   <label style="display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 0.9rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
                     <input type="radio" name="quiz_q_${qIdx}" value="${optIdx}" required />
-                    <span>${opt}</span>
+                    <span>${escapeHtml(opt)}</span>
                   </label>
                 `).join("")}
               </div>
@@ -1323,7 +1696,7 @@ function renderActiveTrainingTabContent() {
 
         <div id="quizResultBanner" style="display: none; margin-bottom: 1.25rem; padding: 1.25rem; border-radius: 14px; font-weight: 800; text-align: center; font-size: 1.15rem;"></div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;" class="no-print">
           <button type="submit" class="action-btn btn-primary" style="width: auto; padding: 0.8rem 2rem; font-size: 1rem;">
             ✅ ส่งคำตอบและตรวจคะแนนทันที
           </button>
@@ -1332,7 +1705,14 @@ function renderActiveTrainingTabContent() {
 
       ${progress.quizScores && progress.quizScores.length > 0 ? `
         <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-          <h4 class="cheat-section-title">🏆 ประวัติคะแนนสอบพนักงาน (Staff Quiz History)</h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h4 class="cheat-section-title" style="margin: 0;">🏆 ประวัติคะแนนสอบพนักงาน (Staff Quiz History)</h4>
+            ${isAdmin ? `
+              <button type="button" class="action-btn btn-secondary no-print" onclick="clearQuizScoresHistory()" style="width: auto; padding: 0.35rem 0.85rem; font-size: 0.78rem; color: #dc2626;">
+                🗑️ ล้างประวัติการสอบ
+              </button>
+            ` : ''}
+          </div>
           <table class="matrix-table-large">
             <thead>
               <tr>
@@ -1359,30 +1739,26 @@ function renderActiveTrainingTabContent() {
       ` : ''}
     `;
   } else {
-    const certItems = [
-      "1. แต่งกายถูกระเบียบ 100% ล้างมือครบ 7 ขั้นตอน และไม่สัมผัสอาหารพร้อมทานด้วยมือเปล่า",
-      "2. ตรวจรับไก่สดวัดอุณหภูมิ ≤ 4°C และจัดเรียงเข้าตู้แช่ตามหลัก FIFO ได้ถูกต้อง",
-      "3. ชั่งตวงผงหมัก บากเนื้อสะโพกไก่ 2 รอย และติดสติกเกอร์ Use-by Label ครบทุกกล่อง",
-      "4. คลุกแป้งด้วยเทคนิค Fold & Roll 10-12 ครั้ง + สะบัดข้อมือ 2 ครั้ง ได้เกล็ดแป้งฟูสวยไม่เป็นก้อนแข็ง",
-      "5. ร่อนแป้งทุกๆ 4 รอบการคลุก และหย่อนไก่ลงเตาทอดจากด้านใกล้ตัวไปไกลตัวได้อย่างปลอดภัย",
-      "6. ตั้งอุณหภูมิและเวลาทอดตามตาราง Frying Matrix ได้แม่นยำโดยไม่ต้องก้มหาเอกสาร",
-      "7. เขย่าสะเด็ดน้ำมัน 30 วินาที และเสียบโพรบวัดอุณหภูมิแกนกลางเนื้อไก่ได้ ≥ 74°C ทุกแบทช์",
-      "8. คลุกซอสเสร็จภายใน 10 วินาที / เขย่าผงครบจังหวะ และเปิดรูระบายไอน้ำข้างกล่องทุกใบ",
-      "9. ตรวจบิล POS เทียบสินค้าแบบ Tick-off ครบถ้วน แยกถุงเครื่องดื่มเย็น และติดสติกเกอร์ Tamper Seal",
-      "10. ช้อนกากแป้ง กรองน้ำมัน วัดค่า TPM บันทึก Waste Log และทำ Deep Clean ปิดร้านได้ครบสมบูรณ์"
-    ];
+    const certItems = tCfg.certItems || [];
 
     area.innerHTML = `
-      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.25rem;">
-        <h4 style="font-size: 1.15rem; font-weight: 800; color: #047857;">🏅 ใบประเมินผลปฏิบัติจริงวันที่ 3 (3-Day Certification Checklist 10 ข้อ)</h4>
-        <p style="font-size: 0.86rem; color: #065f46;">ผู้จัดการสาขาใช้ตรวจประเมินพนักงานใหม่ในช่วงเย็นวันที่ 3 ก่อนมอบป้ายชื่อพนักงานอย่างเป็นทางการ</p>
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 800; color: #047857;">🏅 ใบประเมินผลปฏิบัติจริง (Manager Practical Certification ${certItems.length} ข้อ)</h4>
+          <p style="font-size: 0.86rem; color: #065f46; margin: 0;">ผู้จัดการสาขาใช้ตรวจประเมินพนักงานใหม่ก่อนมอบป้ายชื่อพนักงานอย่างเป็นทางการ</p>
+        </div>
+        ${isAdmin ? `
+          <button type="button" class="action-btn btn-primary no-print" onclick="openEditCertItemsModal()" style="width: auto; padding: 0.55rem 1.1rem; background: #059669;">
+            ✏️ แก้ไข / เพิ่มหัวข้อประเมินผ่านโปร
+          </button>
+        ` : ''}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.5rem;">
         ${certItems.map((txt, idx) => `
           <label style="display: flex; align-items: center; gap: 0.8rem; background: #fff; padding: 0.85rem 1.1rem; border-radius: 12px; border: 1px solid var(--border-color); cursor: pointer;">
             <input type="checkbox" onchange="toggleCertCheckItem(${idx}, this.checked)" ${progress.certChecks && progress.certChecks[idx] ? 'checked' : ''} style="width: 20px; height: 20px;" />
-            <span style="font-weight: 700; font-size: 0.94rem;">${txt}</span>
+            <span style="font-weight: 700; font-size: 0.94rem; flex: 1;">${escapeHtml(txt)}</span>
           </label>
         `).join("")}
       </div>
@@ -1390,13 +1766,306 @@ function renderActiveTrainingTabContent() {
   }
 }
 
+// =========================================================================
+// 🛠️ ฟังก์ชันแก้ไขเนื้อหาในระบบ Training (สำหรับ Admin)
+// =========================================================================
+
+function openEditTrainingDayModal(dayIdx) {
+  const tCfg = getTrainingConfigData();
+  const isNew = dayIdx < 0 || !tCfg.days[dayIdx];
+  const dayObj = isNew
+    ? { id: "day-" + Date.now(), title: `🟣 วันที่ ${(tCfg.days || []).length + 1}: หัวข้อการฝึก...`, color: "#7c3aed", goal: "ระบุเป้าหมายของวันนี้...", tasks: ["ช่วงเช้า: ...", "ช่วงบ่าย: ...", "ช่วงเย็น: ..."] }
+    : tCfg.days[dayIdx];
+
+  const modalHtml = `
+    <div class="modal-overlay" id="editTrainingDayModal" onclick="closeModal('editTrainingDayModal')">
+      <div class="modal-card" style="max-width: 600px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #b45309;">${isNew ? '➕ เพิ่มวันเทรนพนักงานใหม่' : '✏️ แก้ไขรายละเอียดวันเทรนพนักงาน'}</h3>
+          <button onclick="closeModal('editTrainingDayModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveTrainingDayModal(event, ${dayIdx})">
+          <div style="display: grid; grid-template-columns: 1fr 120px; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">ชื่อวันและหัวข้อหลัก *</label>
+              <input type="text" id="editDayTitle" class="form-input" value="${escapeHtml(dayObj.title)}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">สีแถบด้านบน</label>
+              <input type="color" id="editDayColor" class="form-input" value="${escapeHtml(dayObj.color || '#059669')}" style="height: 44px; padding: 0.2rem;" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">เป้าหมายประจำวัน (Goal) *</label>
+            <input type="text" id="editDayGoal" class="form-input" value="${escapeHtml(dayObj.goal)}" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">รายละเอียดกิจกรรมแต่ละช่วงเวลา (บรรทัดละ 1 ช่วงเวลา) *</label>
+            <textarea id="editDayTasks" class="form-textarea" rows="6" required>${escapeHtml((dayObj.tasks || []).join("\n"))}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editTrainingDayModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกข้อมูลวันเทรน</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editTrainingDayModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveTrainingDayModal(event, dayIdx) {
+  event.preventDefault();
+  const tCfg = getTrainingConfigData();
+  const title = document.getElementById("editDayTitle")?.value.trim() || "วันเทรน";
+  const color = document.getElementById("editDayColor")?.value || "#059669";
+  const goal = document.getElementById("editDayGoal")?.value.trim() || "";
+  const tasks = (document.getElementById("editDayTasks")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+
+  if (dayIdx < 0 || !tCfg.days[dayIdx]) {
+    tCfg.days.push({ id: "day-" + Date.now(), title, color, goal, tasks });
+  } else {
+    tCfg.days[dayIdx] = { ...tCfg.days[dayIdx], title, color, goal, tasks };
+  }
+
+  saveTrainingConfigData(tCfg);
+  closeModal("editTrainingDayModal");
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("✅ บันทึกแผนการเทรนพนักงานเรียบร้อยแล้ว!");
+}
+
+function deleteTrainingDayItem(dayIdx) {
+  if (!confirm("ต้องการลบวันเทรนการ์ดนี้ใช่หรือไม่?")) return;
+  const tCfg = getTrainingConfigData();
+  tCfg.days.splice(dayIdx, 1);
+  saveTrainingConfigData(tCfg);
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("🗑️ ลบวันเทรนเรียบร้อยแล้ว");
+}
+
+function openEditGoldenRulesAndCameraModal() {
+  const tCfg = getTrainingConfigData();
+  const modalHtml = `
+    <div class="modal-overlay" id="editGoldenCameraModal" onclick="closeModal('editGoldenCameraModal')">
+      <div class="modal-card" style="max-width: 700px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #b45309;">✏️ แก้ไขหัวข้อหลัก, กฎทองของการเทรน & ตารางมุมกล้อง</h3>
+          <button onclick="closeModal('editGoldenCameraModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveGoldenRulesAndCameraModal(event)">
+          <div class="form-group">
+            <label class="form-label">ชื่อหัวข้อใหญ่ของหน้าระบบเทรน</label>
+            <input type="text" id="editTrHeaderTitle" class="form-input" value="${escapeHtml(tCfg.headerTitle || '')}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">คำอธิบายโมเดลการฝึก (Subtitle)</label>
+            <input type="text" id="editTrHeaderSub" class="form-input" value="${escapeHtml(tCfg.headerSubtitle || '')}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">กฎทองของการเทรน (บรรทัดละ 1 ข้อ)</label>
+            <textarea id="editTrGoldenRules" class="form-textarea" rows="5">${escapeHtml((tCfg.goldenRules || []).join("\n"))}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ตารางคู่มือการถ่ายภาพและวิดีโอสั้น (รูปแบบต่อบรรทัด: มุมกล้อง | เหมาะสำหรับงาน | ตัวอย่างการใช้งานจริง)</label>
+            <textarea id="editTrCameraGuides" class="form-textarea" rows="5">${escapeHtml((tCfg.cameraGuides || []).map(c => `${c.angle} | ${c.suitableFor} | ${c.example}`).join("\n"))}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editGoldenCameraModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกการแก้ไข</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editGoldenCameraModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveGoldenRulesAndCameraModal(event) {
+  event.preventDefault();
+  const tCfg = getTrainingConfigData();
+  tCfg.headerTitle = document.getElementById("editTrHeaderTitle")?.value.trim() || tCfg.headerTitle;
+  tCfg.headerSubtitle = document.getElementById("editTrHeaderSub")?.value.trim() || tCfg.headerSubtitle;
+  tCfg.goldenRules = (document.getElementById("editTrGoldenRules")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  tCfg.cameraGuides = (document.getElementById("editTrCameraGuides")?.value || "").split("\n").map(line => {
+    const parts = line.split("|").map(x => x.trim());
+    if (!parts[0]) return null;
+    return { angle: parts[0], suitableFor: parts[1] || "-", example: parts[2] || "-" };
+  }).filter(Boolean);
+
+  saveTrainingConfigData(tCfg);
+  closeModal("editGoldenCameraModal");
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("✅ บันทึกกฎทองและตารางมุมกล้องเรียบร้อยแล้ว!");
+}
+
+function openEditQuizQuestionModal(qIdx) {
+  const tCfg = getTrainingConfigData();
+  const isNew = qIdx < 0 || !tCfg.quizQuestions[qIdx];
+  const qObj = isNew
+    ? { q: `${(tCfg.quizQuestions || []).length + 1}. คำถามข้อใหม่...`, options: ["ตัวเลือกที่ 1", "ตัวเลือกที่ 2", "ตัวเลือกที่ 3", "ตัวเลือกที่ 4"], answer: 0, explain: "คำอธิบายเฉลย..." }
+    : tCfg.quizQuestions[qIdx];
+
+  const opts = qObj.options || ["", "", "", ""];
+
+  const modalHtml = `
+    <div class="modal-overlay" id="editQuizQuestionModal" onclick="closeModal('editQuizQuestionModal')">
+      <div class="modal-card" style="max-width: 600px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #b45309;">${isNew ? '➕ เพิ่มข้อสอบ SOP ใหม่' : `✏️ แก้ไขข้อสอบข้อที่ ${qIdx + 1}`}</h3>
+          <button onclick="closeModal('editQuizQuestionModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveQuizQuestionModal(event, ${qIdx})">
+          <div class="form-group">
+            <label class="form-label">โจทย์คำถาม *</label>
+            <input type="text" id="editQuizQText" class="form-input" value="${escapeHtml(qObj.q)}" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+            <div class="form-group">
+              <label class="form-label">ตัวเลือกที่ 1 (A) *</label>
+              <input type="text" id="editQuizOpt0" class="form-input" value="${escapeHtml(opts[0] || '')}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ตัวเลือกที่ 2 (B) *</label>
+              <input type="text" id="editQuizOpt1" class="form-input" value="${escapeHtml(opts[1] || '')}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ตัวเลือกที่ 3 (C) *</label>
+              <input type="text" id="editQuizOpt2" class="form-input" value="${escapeHtml(opts[2] || '')}" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">ตัวเลือกที่ 4 (D) *</label>
+              <input type="text" id="editQuizOpt3" class="form-input" value="${escapeHtml(opts[3] || '')}" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ข้อที่เป็นคำตอบที่ถูกต้อง *</label>
+            <select id="editQuizAnswerIdx" class="form-select" style="font-weight: 800; color: #059669;">
+              <option value="0" ${qObj.answer === 0 ? 'selected' : ''}>✅ ตัวเลือกที่ 1 (A)</option>
+              <option value="1" ${qObj.answer === 1 ? 'selected' : ''}>✅ ตัวเลือกที่ 2 (B)</option>
+              <option value="2" ${qObj.answer === 2 ? 'selected' : ''}>✅ ตัวเลือกที่ 3 (C)</option>
+              <option value="3" ${qObj.answer === 3 ? 'selected' : ''}>✅ ตัวเลือกที่ 4 (D)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">คำอธิบายเฉลย (จะแสดงให้พนักงานเห็นหลังกดส่งข้อสอบ) *</label>
+            <textarea id="editQuizExplain" class="form-textarea" rows="3" required>${escapeHtml(qObj.explain || '')}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editQuizQuestionModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกข้อสอบ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editQuizQuestionModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveQuizQuestionModal(event, qIdx) {
+  event.preventDefault();
+  const tCfg = getTrainingConfigData();
+  const newQ = {
+    q: document.getElementById("editQuizQText")?.value.trim() || "",
+    options: [
+      document.getElementById("editQuizOpt0")?.value.trim() || "",
+      document.getElementById("editQuizOpt1")?.value.trim() || "",
+      document.getElementById("editQuizOpt2")?.value.trim() || "",
+      document.getElementById("editQuizOpt3")?.value.trim() || ""
+    ],
+    answer: parseInt(document.getElementById("editQuizAnswerIdx")?.value) || 0,
+    explain: document.getElementById("editQuizExplain")?.value.trim() || ""
+  };
+
+  if (qIdx < 0 || !tCfg.quizQuestions[qIdx]) {
+    tCfg.quizQuestions.push(newQ);
+  } else {
+    tCfg.quizQuestions[qIdx] = newQ;
+  }
+
+  saveTrainingConfigData(tCfg);
+  closeModal("editQuizQuestionModal");
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("✅ บันทึกข้อสอบเรียบร้อยแล้ว!");
+}
+
+function deleteQuizQuestionItem(qIdx) {
+  if (!confirm("ต้องการลบข้อสอบข้อนี้ใช่หรือไม่?")) return;
+  const tCfg = getTrainingConfigData();
+  tCfg.quizQuestions.splice(qIdx, 1);
+  saveTrainingConfigData(tCfg);
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("🗑️ ลบข้อสอบเรียบร้อยแล้ว");
+}
+
+function clearQuizScoresHistory() {
+  if (!confirm("ต้องการล้างประวัติคะแนนสอบทั้งหมดใช่หรือไม่?")) return;
+  const progress = getOnboardingProgressData();
+  progress.quizScores = [];
+  saveOnboardingProgressData(progress);
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("🗑️ ล้างประวัติคะแนนสอบเรียบร้อยแล้ว");
+}
+
+function openEditCertItemsModal() {
+  const tCfg = getTrainingConfigData();
+  const modalHtml = `
+    <div class="modal-overlay" id="editCertItemsModal" onclick="closeModal('editCertItemsModal')">
+      <div class="modal-card" style="max-width: 650px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #047857;">✏️ แก้ไขหัวข้อประเมินปฏิบัติจริงผ่านโปร (สำหรับผู้จัดการ)</h3>
+          <button onclick="closeModal('editCertItemsModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveCertItemsModal(event)">
+          <div class="form-group">
+            <label class="form-label">รายการหัวข้อประเมินผ่านโปร (บรรทัดละ 1 ข้อ — สามารถเพิ่มหรือลบบรรทัดได้ตามต้องการ)</label>
+            <textarea id="editCertItemsTextarea" class="form-textarea" rows="11" required>${escapeHtml((tCfg.certItems || []).join("\n"))}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editCertItemsModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกหัวข้อประเมิน</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editCertItemsModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveCertItemsModal(event) {
+  event.preventDefault();
+  const tCfg = getTrainingConfigData();
+  tCfg.certItems = (document.getElementById("editCertItemsTextarea")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  saveTrainingConfigData(tCfg);
+  closeModal("editCertItemsModal");
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("✅ บันทึกหัวข้อประเมินผ่านโปรเรียบร้อยแล้ว!");
+}
+
+function resetTrainingConfigToDefault() {
+  if (!confirm("ต้องการคืนค่าตารางเทรน ข้อสอบ และใบประเมินกลับเป็นค่าเริ่มต้นทั้งหมดใช่หรือไม่?")) return;
+  saveTrainingConfigData(DEFAULT_TRAINING_CONFIG);
+  renderOnboardingAndQuizView();
+  if (typeof showToast === "function") showToast("🔄 รีเซ็ตข้อมูลระบบเทรนกลับเป็นค่าเริ่มต้นแล้ว");
+}
+
 function handleSubmitSopQuiz(event) {
   event.preventDefault();
   const staffName = (document.getElementById("quizStaffNameInput")?.value || "").trim() || "พนักงานทดสอบ";
+  const tCfg = getTrainingConfigData();
+  const questions = tCfg.quizQuestions || [];
   let score = 0;
-  const total = SOP_QUIZ_QUESTIONS.length;
+  const total = questions.length;
+  if (total === 0) return;
 
-  SOP_QUIZ_QUESTIONS.forEach((qItem, qIdx) => {
+  questions.forEach((qItem, qIdx) => {
     const selected = document.querySelector(`input[name="quiz_q_${qIdx}"]:checked`);
     const chosenIdx = selected ? parseInt(selected.value) : -1;
     const explainEl = document.getElementById(`quizExplain_${qIdx}`);
@@ -1423,7 +2092,8 @@ function handleSubmitSopQuiz(event) {
   });
 
   const percent = Math.round((score / total) * 100);
-  const passed = percent >= 80;
+  const passPct = tCfg.passingScorePercent || 80;
+  const passed = percent >= passPct;
 
   const banner = document.getElementById("quizResultBanner");
   if (banner) {
@@ -1433,7 +2103,7 @@ function handleSubmitSopQuiz(event) {
     banner.style.border = `2px solid ${passed ? '#10b981' : '#ef4444'}`;
     banner.innerHTML = passed
       ? `🎉 ยินดีด้วยคุณ ${escapeHtml(staffName)}! สอบได้ ${score}/${total} คะแนน (${percent}%) — ผ่านเกณฑ์มาตรฐาน SOP!`
-      : `⚠️ คุณ ${escapeHtml(staffName)} สอบได้ ${score}/${total} คะแนน (${percent}%) — ยังไม่ถึงเกณฑ์ 80% กรุณาทบทวนจุดที่ผิดแล้วสอบใหม่อีกครั้งค่ะ`;
+      : `⚠️ คุณ ${escapeHtml(staffName)} สอบได้ ${score}/${total} คะแนน (${percent}%) — ยังไม่ถึงเกณฑ์ ${passPct}% กรุณาทบทวนจุดที่ผิดแล้วสอบใหม่อีกครั้งค่ะ`;
   }
 
   const progress = getOnboardingProgressData();
@@ -2711,6 +3381,72 @@ function saveFridgeDailyChecklistForm(showNotification = true) {
 // แท็บ 3: เทมเพลตฟอร์มสติกเกอร์เปล่า (Fast-Tick Label) 12 ดวง/หน้า A4 สำหรับสั่งพิมพ์แล้วให้พนักงานเขียนวันที่เอง
 // =========================================================================
 
+const DEFAULT_STICKER_ITEMS = [
+  "ต้นหอมซอย",
+  "หอมใหญ่หั่น",
+  "เห็ดเข็มทองหั่น",
+  "กิมจิ Superlock",
+  "ไชเท้าดอง",
+  "น้ำซุปกิมจิ",
+  "ไก่หมัก/ซอส"
+];
+
+function getStickerCheckboxItems() {
+  const local = localStorage.getItem("PKT_STICKER_ITEMS_V33");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {}
+  }
+  return DEFAULT_STICKER_ITEMS;
+}
+
+function saveStickerCheckboxItems(items) {
+  localStorage.setItem("PKT_STICKER_ITEMS_V33", JSON.stringify(items));
+  if (typeof firestoreSaveDocument === "function") {
+    firestoreSaveDocument("pkt_app_state", "sticker_items", items);
+  }
+}
+
+function openEditStickerItemsModal() {
+  const items = getStickerCheckboxItems();
+  const modalHtml = `
+    <div class="modal-overlay" id="editStickerItemsModal" onclick="closeModal('editStickerItemsModal')">
+      <div class="modal-card" style="max-width: 520px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 style="font-size: 1.2rem; color: #1d4ed8;">✏️ แก้ไขรายชื่อวัตถุดิบบนสติกเกอร์ (Fast-Tick Label)</h3>
+          <button onclick="closeModal('editStickerItemsModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <form onsubmit="handleSaveStickerItemsModal(event)">
+          <div class="form-group">
+            <label class="form-label">รายชื่อวัตถุดิบที่มีช่องติ๊ก ☐ บนสติกเกอร์ (บรรทัดละ 1 ชื่อ แนะนำไม่เกิน 7-8 รายการเพื่อให้พอดีกรอบ)</label>
+            <textarea id="editStickerItemsTextarea" class="form-textarea" rows="8" required>${escapeHtml(items.join("\n"))}</textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="action-btn btn-secondary" onclick="closeModal('editStickerItemsModal')" style="width: auto;">ยกเลิก</button>
+            <button type="submit" class="action-btn btn-primary" style="width: auto;">💾 บันทึกรายชื่อวัตถุดิบ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById("editStickerItemsModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+function handleSaveStickerItemsModal(event) {
+  event.preventDefault();
+  const lines = (document.getElementById("editStickerItemsTextarea")?.value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  if (lines.length > 0) {
+    saveStickerCheckboxItems(lines);
+  }
+  closeModal("editStickerItemsModal");
+  renderFridgeManagementView();
+  if (typeof showToast === "function") showToast("✅ อัปเดตรายชื่อวัตถุดิบบนสติกเกอร์ทั้ง 12 ดวงเรียบร้อยแล้ว!");
+}
+
 function renderFridgeBlankStickersTab(area) {
   const themeMap = {
     blue: { label: "🔵 มาตรฐานสีน้ำเงิน (Standard Daily Prep)", headerBg: "#1d4ed8", borderColor: "#1d4ed8", badgeText: "FOOD PREP STICKER" },
@@ -2726,6 +3462,8 @@ function renderFridgeBlankStickersTab(area) {
 
   const activeTheme = themeMap[selectedStickerColorTheme] || themeMap.blue;
   const twelveArray = Array.from({ length: 12 }, (_, i) => i + 1);
+  const stickerItems = getStickerCheckboxItems();
+  const isAdmin = typeof currentRole !== "undefined" && currentRole === "admin";
 
   area.innerHTML = `
     <div class="no-print" style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.15rem 1.35rem; margin-bottom: 1.25rem;">
@@ -2740,6 +3478,11 @@ function renderFridgeBlankStickersTab(area) {
         </div>
 
         <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+          ${isAdmin ? `
+            <button class="action-btn btn-secondary" onclick="openEditStickerItemsModal()" style="width: auto; padding: 0.5rem 1rem; border-color: #f59e0b; background: #fffbeb; color: #b45309; font-weight: 800;">
+              ✏️ แก้ไขรายชื่อวัตถุดิบบนสติกเกอร์
+            </button>
+          ` : ''}
           <select class="form-select" style="width: auto; font-weight: 700; padding: 0.5rem 0.85rem;" onchange="selectedStickerColorTheme = this.value; renderFridgeManagementView();">
             ${Object.entries(themeMap).map(([k, v]) => `<option value="${k}" ${selectedStickerColorTheme === k ? 'selected' : ''}>${v.label}</option>`).join("")}
           </select>
@@ -2762,13 +3505,7 @@ function renderFridgeBlankStickersTab(area) {
             <div class="fast-tick-sticker-body">
               <div style="font-weight: 800; font-size: 0.74rem; color: #0f172a; margin-bottom: 0.2rem;">วัตถุดิบ (ติ๊กเลือก):</div>
               <div class="fast-tick-options-grid">
-                <span>☐ ต้นหอมซอย</span>
-                <span>☐ หอมใหญ่หั่น</span>
-                <span>☐ เห็ดเข็มทองหั่น</span>
-                <span>☐ กิมจิ Superlock</span>
-                <span>☐ ไชเท้าดอง</span>
-                <span>☐ น้ำซุปกิมจิ</span>
-                <span>☐ ไก่หมัก/ซอส</span>
+                ${stickerItems.map(stName => `<span>☐ ${escapeHtml(stName)}</span>`).join("")}
                 <span style="grid-column: span 2;">☐ อื่นๆ: ...............................</span>
               </div>
               <div class="fast-tick-line">
