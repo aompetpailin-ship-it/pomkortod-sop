@@ -7,12 +7,12 @@
 const FIREBASE_STORAGE_KEY = "PKT_FIREBASE_CONFIG_V1";
 
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyA0oHHvkgdCPnxffwhADaKGcFqZ2aKtD5E",
+  authDomain: "pomkortod-sop.firebaseapp.com",
+  projectId: "pomkortod-sop",
+  storageBucket: "pomkortod-sop.firebasestorage.app",
+  messagingSenderId: "267963813061",
+  appId: "1:267963813061:web:1dd13270b95b0df3fcf4ac"
 };
 
 let firestoreRestBaseUrl = null;
