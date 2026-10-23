@@ -96,6 +96,7 @@ function escapeHtmlText(str) {
 
 async function firestoreSaveDocument(collectionName, docId, dataObj) {
   if (!isFirebaseConfigured() || !firestoreRestBaseUrl) return false;
+  isSavingToFirebase = true;
   try {
     const apiKeyParam = currentFirebaseConfig.apiKey ? `?key=${encodeURIComponent(currentFirebaseConfig.apiKey)}` : "";
     const url = `${firestoreRestBaseUrl}/${encodeURIComponent(collectionName)}/${encodeURIComponent(docId)}${apiKeyParam}`;
@@ -117,6 +118,8 @@ async function firestoreSaveDocument(collectionName, docId, dataObj) {
   } catch (err) {
     console.warn(`Firestore Save Error (${collectionName}/${docId}):`, err);
     return false;
+  } finally {
+    setTimeout(() => { isSavingToFirebase = false; }, 2500);
   }
 }
 
@@ -228,7 +231,7 @@ async function syncAllAppDataToFirebase() {
     const cheatSheetsConfig = typeof getCheatSheetsConfig === "function" ? getCheatSheetsConfig() : null;
     const checklistTemplates = typeof getChecklistTemplatesConfig === "function" ? getChecklistTemplatesConfig() : null;
     const fridgePlans = typeof getFridgePlansData === "function" ? getFridgePlansData() : null;
-    const fridgeLogs = typeof getFridgeDailyLogs === "function" ? getFridgeDailyLogs() : null;
+    const fridgeLogs = typeof getFridgeChecklistLogs === "function" ? getFridgeChecklistLogs() : null;
     const stickerItems = typeof getStickerCheckboxItems === "function" ? getStickerCheckboxItems() : null;
 
     // บันทึกแต่ละ SOP แยกเป็น Document ย่อยใน Collection 'pkt_sops' เพื่อความเร็วและไม่ติดขนาด 1MB
@@ -322,37 +325,37 @@ async function pullAllAppDataFromFirebase() {
 
     const trainingConfig = await firestoreGetDocument("pkt_app_state", "training_config");
     if (trainingConfig && typeof trainingConfig === "object") {
-      localStorage.setItem("PKT_TRAINING_CONFIG_V1", JSON.stringify(trainingConfig));
+      localStorage.setItem("PKT_TRAINING_CONFIG_V33", JSON.stringify(trainingConfig));
       anyLoaded = true;
     }
 
     const cheatSheetsConfig = await firestoreGetDocument("pkt_app_state", "cheatsheets_config");
     if (cheatSheetsConfig && typeof cheatSheetsConfig === "object") {
-      localStorage.setItem("PKT_CHEATSHEETS_CONFIG_V1", JSON.stringify(cheatSheetsConfig));
+      localStorage.setItem("PKT_CHEATSHEETS_CONFIG_V33", JSON.stringify(cheatSheetsConfig));
       anyLoaded = true;
     }
 
     const checklistTemplates = await firestoreGetDocument("pkt_app_state", "checklist_templates");
     if (checklistTemplates && typeof checklistTemplates === "object") {
-      localStorage.setItem("PKT_CHECKLIST_TEMPLATES_V1", JSON.stringify(checklistTemplates));
+      localStorage.setItem("PKT_CHECKLIST_TEMPLATES_V33", JSON.stringify(checklistTemplates));
       anyLoaded = true;
     }
 
     const fridgePlans = await firestoreGetDocument("pkt_app_state", "fridge_plans");
     if (fridgePlans && typeof fridgePlans === "object") {
-      localStorage.setItem("PKT_FRIDGE_PLANS_V1", JSON.stringify(fridgePlans));
+      localStorage.setItem("PKT_FRIDGE_PLANS", JSON.stringify(fridgePlans));
       anyLoaded = true;
     }
 
     const fridgeLogs = await firestoreGetDocument("pkt_app_state", "fridge_daily_logs");
     if (fridgeLogs && typeof fridgeLogs === "object") {
-      localStorage.setItem("PKT_FRIDGE_DAILY_LOGS_V1", JSON.stringify(fridgeLogs));
+      localStorage.setItem("PKT_FRIDGE_DAILY_LOGS", JSON.stringify(fridgeLogs));
       anyLoaded = true;
     }
 
     const stickerItems = await firestoreGetDocument("pkt_app_state", "sticker_items");
     if (stickerItems && Array.isArray(stickerItems)) {
-      localStorage.setItem("PKT_STICKER_ITEMS_V1", JSON.stringify(stickerItems));
+      localStorage.setItem("PKT_STICKER_ITEMS_V33", JSON.stringify(stickerItems));
       anyLoaded = true;
     }
 
@@ -363,12 +366,15 @@ async function pullAllAppDataFromFirebase() {
   }
 }
 
+let isSavingToFirebase = false;
+
 function startFirebaseRealtimePolling() {
   if (firebasePollingTimer) clearInterval(firebasePollingTimer);
   if (!isFirebaseConfigured()) return;
   firebasePollingTimer = setInterval(async () => {
+    if (isSavingToFirebase) return;
     const updated = await pullAllAppDataFromFirebase();
-    if (updated) {
+    if (updated && !isSavingToFirebase) {
       const hasOpenModal = document.querySelector(".modal-overlay");
       if (!hasOpenModal && typeof renderMainView === "function") {
         renderMainView();

@@ -613,6 +613,14 @@ async function handleSaveSOP(event, id) {
       allSop[existingIndex] = sopObj;
     } else {
       allSop.push(sopObj);
+      // เมื่อเพิ่ม SOP ใหม่ ให้สลับหน้าจอไปยังหมวดหมู่ของ SOP ที่เพิ่งเพิ่มทันทีเพื่อให้ผู้ใช้เห็นรายการใหม่ชัดเจน
+      if (typeof currentViewMode !== "undefined") currentViewMode = "sop";
+      if (typeof currentCategory !== "undefined" && currentCategory !== "all" && currentCategory !== category) {
+        currentCategory = category;
+      }
+      if (typeof currentSubCategory !== "undefined" && currentSubCategory !== "all" && currentSubCategory !== subCategory) {
+        currentSubCategory = "all";
+      }
     }
 
     saveSOPData(allSop);
