@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   initAntiCopyProtection();
   initEventListeners();
 
+  if (typeof initFirebaseEngine === "function") {
+    initFirebaseEngine();
+  }
+
   const currentUser = getCurrentUserSession();
   if (currentUser) {
     currentRole = currentUser.role;

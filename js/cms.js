@@ -822,8 +822,25 @@ function importSOPJSON() {
 }
 
 async function handleManualCloudPull() {
-  if (typeof openFirebaseSetupModal === "function") {
-    openFirebaseSetupModal();
+  if (typeof showToast === "function") {
+    showToast("⏳ กำลังดึงข้อมูลล่าสุดจาก Firebase Cloud (pomkortod-sop)...", "info", 2000);
+  }
+  if (typeof initFirebaseEngine === "function") {
+    initFirebaseEngine();
+  }
+  if (typeof pullAllAppDataFromFirebase === "function") {
+    const ok = await pullAllAppDataFromFirebase();
+    if (ok) {
+      if (typeof renderSidebarNavigation === "function") renderSidebarNavigation();
+      if (typeof renderMainView === "function") renderMainView();
+      if (typeof showToast === "function") {
+        showToast("✅ ซิงค์ข้อมูลล่าสุดจาก Firebase Cloud สำเร็จแล้ว!");
+      }
+      return;
+    }
+  }
+  if (typeof forceRefreshFromCloud === "function") {
+    await forceRefreshFromCloud();
   }
 }
 

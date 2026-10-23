@@ -264,83 +264,99 @@ async function syncAllAppDataToFirebase() {
 async function pullAllAppDataFromFirebase() {
   if (!isFirebaseConfigured()) return false;
   try {
+    let anyLoaded = false;
     const sops = await firestoreListDocuments("pkt_sops");
     if (sops && sops.length > 0) {
       const cleaned = typeof filterInvalidSOPs === "function" ? filterInvalidSOPs(sops) : sops;
       localStorage.setItem("PKT_SOP_DATA_V30", JSON.stringify(cleaned));
+      anyLoaded = true;
     }
 
     const subCats = await firestoreGetDocument("pkt_app_state", "sub_categories");
     if (subCats && Array.isArray(subCats)) {
       localStorage.setItem("PKT_SUB_CATEGORIES_V30", JSON.stringify(subCats));
+      anyLoaded = true;
     }
 
     const branches = await firestoreGetDocument("pkt_app_state", "branches");
     if (branches && Array.isArray(branches)) {
       localStorage.setItem("PKT_BRANCHES_V30", JSON.stringify(branches));
+      anyLoaded = true;
     }
 
     const masterIngs = await firestoreGetDocument("pkt_app_state", "master_ingredients");
     if (masterIngs && Array.isArray(masterIngs)) {
       localStorage.setItem("PKT_MASTER_INGREDIENTS_V30", JSON.stringify(masterIngs));
+      anyLoaded = true;
     }
 
     const dailyLogs = await firestoreGetDocument("pkt_app_state", "daily_logs");
     if (dailyLogs && typeof dailyLogs === "object") {
       localStorage.setItem("PKT_DAILY_OPS_LOGS_V30", JSON.stringify(dailyLogs));
+      anyLoaded = true;
     }
 
     const claimLogs = await firestoreGetDocument("pkt_app_state", "delivery_claims");
     if (claimLogs && Array.isArray(claimLogs)) {
       localStorage.setItem("PKT_DELIVERY_CLAIMS_V30", JSON.stringify(claimLogs));
+      anyLoaded = true;
     }
 
     const wasteLogs = await firestoreGetDocument("pkt_app_state", "waste_logs");
     if (wasteLogs && Array.isArray(wasteLogs)) {
       localStorage.setItem("PKT_WASTE_LOGS_V30", JSON.stringify(wasteLogs));
+      anyLoaded = true;
     }
 
     const trainingData = await firestoreGetDocument("pkt_app_state", "onboarding_progress");
     if (trainingData && typeof trainingData === "object") {
       localStorage.setItem("PKT_ONBOARDING_DATA_V30", JSON.stringify(trainingData));
+      anyLoaded = true;
     }
 
     const accounts = await firestoreGetDocument("pkt_app_state", "user_accounts");
     if (accounts && Array.isArray(accounts)) {
       localStorage.setItem("PKT_USER_ACCOUNTS", JSON.stringify(accounts));
+      anyLoaded = true;
     }
 
     const trainingConfig = await firestoreGetDocument("pkt_app_state", "training_config");
     if (trainingConfig && typeof trainingConfig === "object") {
       localStorage.setItem("PKT_TRAINING_CONFIG_V1", JSON.stringify(trainingConfig));
+      anyLoaded = true;
     }
 
     const cheatSheetsConfig = await firestoreGetDocument("pkt_app_state", "cheatsheets_config");
     if (cheatSheetsConfig && typeof cheatSheetsConfig === "object") {
       localStorage.setItem("PKT_CHEATSHEETS_CONFIG_V1", JSON.stringify(cheatSheetsConfig));
+      anyLoaded = true;
     }
 
     const checklistTemplates = await firestoreGetDocument("pkt_app_state", "checklist_templates");
     if (checklistTemplates && typeof checklistTemplates === "object") {
       localStorage.setItem("PKT_CHECKLIST_TEMPLATES_V1", JSON.stringify(checklistTemplates));
+      anyLoaded = true;
     }
 
     const fridgePlans = await firestoreGetDocument("pkt_app_state", "fridge_plans");
     if (fridgePlans && typeof fridgePlans === "object") {
       localStorage.setItem("PKT_FRIDGE_PLANS_V1", JSON.stringify(fridgePlans));
+      anyLoaded = true;
     }
 
     const fridgeLogs = await firestoreGetDocument("pkt_app_state", "fridge_daily_logs");
     if (fridgeLogs && typeof fridgeLogs === "object") {
       localStorage.setItem("PKT_FRIDGE_DAILY_LOGS_V1", JSON.stringify(fridgeLogs));
+      anyLoaded = true;
     }
 
     const stickerItems = await firestoreGetDocument("pkt_app_state", "sticker_items");
     if (stickerItems && Array.isArray(stickerItems)) {
       localStorage.setItem("PKT_STICKER_ITEMS_V1", JSON.stringify(stickerItems));
+      anyLoaded = true;
     }
 
-    return !!(sops && sops.length > 0);
+    return anyLoaded;
   } catch (err) {
     console.warn("Error pulling data from Firebase:", err);
     return false;
@@ -351,8 +367,14 @@ function startFirebaseRealtimePolling() {
   if (firebasePollingTimer) clearInterval(firebasePollingTimer);
   if (!isFirebaseConfigured()) return;
   firebasePollingTimer = setInterval(async () => {
-    await pullAllAppDataFromFirebase();
-  }, 45000);
+    const updated = await pullAllAppDataFromFirebase();
+    if (updated) {
+      const hasOpenModal = document.querySelector(".modal-overlay");
+      if (!hasOpenModal && typeof renderMainView === "function") {
+        renderMainView();
+      }
+    }
+  }, 20000);
 }
 
 // =========================================================================
