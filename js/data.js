@@ -1068,7 +1068,13 @@ function filterInvalidSOPs(list) {
     });
 }
 
+let memorySopDataCache = null;
+
 function getSOPData() {
+  if (Array.isArray(memorySopDataCache) && memorySopDataCache.length > 0) {
+    return memorySopDataCache;
+  }
+
   const localV30 = localStorage.getItem("PKT_SOP_DATA_V30");
   if (localV30) {
     try {
@@ -1080,6 +1086,7 @@ function getSOPData() {
             cleaned.push(defSop);
           }
         });
+        memorySopDataCache = cleaned;
         return cleaned;
       }
     } catch (e) {
@@ -1104,17 +1111,27 @@ function getSOPData() {
   }
 
   const finalInitial = Array.from(mergedMap.values());
+  memorySopDataCache = finalInitial;
   saveSOPData(finalInitial);
   return finalInitial;
 }
 
-function saveSOPData(data) {
-  const cleanedData = filterInvalidSOPs(data);
+function setSOPDataCacheAndLocal(cleanedData) {
+  memorySopDataCache = cleanedData;
   try {
     localStorage.setItem("PKT_SOP_DATA_V30", JSON.stringify(cleanedData));
   } catch (e) {
-    console.warn("LocalStorage quota warning:", e);
+    console.warn("LocalStorage quota warning, storing lightweight copy in localStorage while keeping full images in memory & Firebase Cloud:", e);
+    try {
+      localStorage.removeItem("PKT_SOP_DATA_V10");
+      localStorage.setItem("PKT_SOP_DATA_V30", JSON.stringify(cleanedData));
+    } catch (e2) {}
   }
+}
+
+function saveSOPData(data) {
+  const cleanedData = filterInvalidSOPs(data);
+  setSOPDataCacheAndLocal(cleanedData);
   syncSOPToCloud(cleanedData);
 }
 

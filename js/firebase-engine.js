@@ -271,7 +271,11 @@ async function pullAllAppDataFromFirebase() {
     const sops = await firestoreListDocuments("pkt_sops");
     if (sops && sops.length > 0) {
       const cleaned = typeof filterInvalidSOPs === "function" ? filterInvalidSOPs(sops) : sops;
-      localStorage.setItem("PKT_SOP_DATA_V30", JSON.stringify(cleaned));
+      if (typeof setSOPDataCacheAndLocal === "function") {
+        setSOPDataCacheAndLocal(cleaned);
+      } else {
+        try { localStorage.setItem("PKT_SOP_DATA_V30", JSON.stringify(cleaned)); } catch (e) {}
+      }
       anyLoaded = true;
     }
 

@@ -416,7 +416,7 @@ async function handleStepImageUpload(event, index) {
         let width = img.width;
         let height = img.height;
 
-        const MAX_WIDTH = 720;
+        const MAX_WIDTH = 640;
         if (width > MAX_WIDTH) {
           height = Math.round((height * MAX_WIDTH) / width);
           width = MAX_WIDTH;
@@ -426,13 +426,12 @@ async function handleStepImageUpload(event, index) {
         canvas.height = height;
 
         const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
-        // บีบอัดเป็น WebP ความคมชัดสูง (Fallback เป็น JPEG)
-        let compressedDataUrl = canvas.toDataURL("image/webp", 0.72);
-        if (!compressedDataUrl || compressedDataUrl.length < 50) {
-          compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
-        }
+        // บีบอัดเป็น JPEG ความคมชัดสูงขนาดกะทัดรัด (รองรับ Safari / Chrome / มือถือ 100% ไม่เกินโควต้า 1MB)
+        let compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
 
         if (currentEditingSteps[index]) {
           currentEditingSteps[index].imageUrl = compressedDataUrl;
