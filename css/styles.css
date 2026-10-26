@@ -1180,4 +1180,12 @@ body {
   .step-number, .flow-step-num { background: #000000 !important; color: #ffffff !important; }
   .matrix-table-large th { background: #e2e8f0 !important; color: #000000 !important; border: 1px solid #000000 !important; }
   .matrix-table-large td { border: 1px solid #64748b !important; }
+  .inline-trans-trigger, #translatorModeFloatingBar { display: none !important; }
+}
+
+/* Translator Mode Hover Styling */
+.translator-hoverable-el:hover {
+  outline: 1.5px dashed #8b5cf6;
+  outline-offset: 2px;
+  border-radius: 6px;
 }

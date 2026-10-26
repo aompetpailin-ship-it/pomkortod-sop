@@ -146,10 +146,16 @@ function renderMainView() {
   }
   if (currentViewMode === "food-cost" && typeof renderFoodCostingAdminView === "function") {
     renderFoodCostingAdminView();
+    if (typeof scheduleApplyTranslationsToDOM === "function") scheduleApplyTranslationsToDOM();
+    return;
+  }
+  if (currentViewMode === "translation-studio" && typeof renderTranslationStudioView === "function") {
+    renderTranslationStudioView();
     return;
   }
 
   renderSOPList();
+  if (typeof scheduleApplyTranslationsToDOM === "function") scheduleApplyTranslationsToDOM();
 }
 
 function renderSidebarNavigation() {
@@ -178,6 +184,11 @@ function renderSidebarNavigation() {
       <a class="nav-item ${currentViewMode === 'onboarding' ? 'active' : ''}" href="#" onclick="event.preventDefault(); switchMainModule('onboarding')">
         <span>🎓</span> เทรนพนักงาน 3 วัน & สอบ Quiz
       </a>
+      ${(currentRole === 'admin' || (typeof isTranslatorModeActive !== 'undefined' && isTranslatorModeActive)) ? `
+        <a class="nav-item ${currentViewMode === 'translation-studio' ? 'active' : ''}" href="#" onclick="event.preventDefault(); switchMainModule('translation-studio')" style="border: 1px dashed #8b5cf6; background: ${currentViewMode === 'translation-studio' ? '#7c3aed' : '#f5f3ff'}; color: ${currentViewMode === 'translation-studio' ? '#ffffff' : '#6d28d9'}; font-weight: 800;">
+          <span>🌐</span> ตารางแปลภาษา (พม่า/กะเหรี่ยง)
+        </a>
+      ` : ''}
       ${currentRole === 'admin' ? `
         <a class="nav-item ${currentViewMode === 'food-cost' ? 'active' : ''}" href="#" onclick="event.preventDefault(); switchMainModule('food-cost')" style="border: 1px dashed #f59e0b; background: ${currentViewMode === 'food-cost' ? 'var(--primary-gradient)' : '#fffbeb'};">
           <span>💰</span> คำนวณต้นทุน Food Cost (Admin)
@@ -209,6 +220,7 @@ function renderSidebarNavigation() {
 
   container.innerHTML = html;
   updateUIPermissions();
+  if (typeof scheduleApplyTranslationsToDOM === "function") scheduleApplyTranslationsToDOM();
 }
 
 function selectSopStage(cat, sub) {
@@ -409,6 +421,7 @@ function renderSOPList() {
 
   container.innerHTML = html;
   updateUIPermissions();
+  if (typeof scheduleApplyTranslationsToDOM === "function") scheduleApplyTranslationsToDOM();
 }
 
 function viewSOPDetail(sopId, fallbackIdx) {
@@ -668,6 +681,7 @@ function renderSOPDetail(sopId, fallbackIdx) {
 
   container.innerHTML = html;
   updateUIPermissions();
+  if (typeof scheduleApplyTranslationsToDOM === "function") scheduleApplyTranslationsToDOM();
 }
 
 function renderStepVideoEmbedHtml(url) {

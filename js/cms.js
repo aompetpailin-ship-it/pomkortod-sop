@@ -780,7 +780,8 @@ function exportSOPJSON() {
     masterIngredients: getMasterIngredients(),
     dailyLogs: getDailyOperationsLogs(),
     deliveryClaims: getDeliveryClaimsData(),
-    wasteLogs: getWasteLogsData()
+    wasteLogs: getWasteLogsData(),
+    translationsDict: typeof getTranslationsDict === "function" ? getTranslationsDict() : {}
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -810,6 +811,9 @@ function importSOPJSON() {
           if (imported.dailyLogs) saveDailyOperationsLogs(imported.dailyLogs);
           if (imported.deliveryClaims) saveDeliveryClaimsData(imported.deliveryClaims);
           if (imported.wasteLogs) saveWasteLogsData(imported.wasteLogs);
+          if (imported.translationsDict && typeof saveTranslationsDict === "function") {
+            saveTranslationsDict(imported.translationsDict);
+          }
           renderSidebarNavigation();
           renderMainView();
           showToast("📥 นำเข้าและอัปเดตข้อมูลทั้งระบบสำเร็จแล้ว!");

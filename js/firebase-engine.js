@@ -233,6 +233,8 @@ async function syncAllAppDataToFirebase() {
     const fridgePlans = typeof getFridgePlansData === "function" ? getFridgePlansData() : null;
     const fridgeLogs = typeof getFridgeChecklistLogs === "function" ? getFridgeChecklistLogs() : null;
     const stickerItems = typeof getStickerCheckboxItems === "function" ? getStickerCheckboxItems() : null;
+    const transDict = typeof getTranslationsDict === "function" ? getTranslationsDict() : null;
+    const transPin = typeof getTranslatorPin === "function" ? getTranslatorPin() : null;
 
     // บันทึกแต่ละ SOP แยกเป็น Document ย่อยใน Collection 'pkt_sops' เพื่อความเร็วและไม่ติดขนาด 1MB
     for (const sop of allSops) {
@@ -256,6 +258,8 @@ async function syncAllAppDataToFirebase() {
     if (fridgePlans) await firestoreSaveDocument("pkt_app_state", "fridge_plans", fridgePlans);
     if (fridgeLogs) await firestoreSaveDocument("pkt_app_state", "fridge_daily_logs", fridgeLogs);
     if (stickerItems) await firestoreSaveDocument("pkt_app_state", "sticker_items", stickerItems);
+    if (transDict) await firestoreSaveDocument("pkt_app_state", "translations_dict", transDict);
+    if (transPin) await firestoreSaveDocument("pkt_app_state", "translator_pin", { pin: transPin });
 
     return true;
   } catch (err) {
@@ -360,6 +364,21 @@ async function pullAllAppDataFromFirebase() {
     const stickerItems = await firestoreGetDocument("pkt_app_state", "sticker_items");
     if (stickerItems && Array.isArray(stickerItems)) {
       localStorage.setItem("PKT_STICKER_ITEMS_V33", JSON.stringify(stickerItems));
+      anyLoaded = true;
+    }
+
+    const transDict = await firestoreGetDocument("pkt_app_state", "translations_dict");
+    if (transDict && typeof transDict === "object") {
+      try { localStorage.setItem("PKT_TRANSLATIONS_DICT_V1", JSON.stringify(transDict)); } catch (e) {}
+      if (typeof memoryTranslationsDict !== "undefined") {
+        memoryTranslationsDict = { ...(typeof DEFAULT_TRANSLATIONS_DICT !== "undefined" ? DEFAULT_TRANSLATIONS_DICT : {}), ...transDict };
+      }
+      anyLoaded = true;
+    }
+
+    const transPinObj = await firestoreGetDocument("pkt_app_state", "translator_pin");
+    if (transPinObj && transPinObj.pin) {
+      localStorage.setItem("PKT_TRANSLATOR_PIN_V1", String(transPinObj.pin));
       anyLoaded = true;
     }
 
